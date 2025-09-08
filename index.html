@@ -323,51 +323,51 @@
         let countyActiveLayer = null;
 
         const alertStyles = {
-            'Tornado Warning': { color: '#ff0000', className: 'pulsing-layer' },
-            'Tornado Watch': { color: '#ffcc00', dashArray: '10, 10', fillOpacity: 0.3 },
-            'Tornado Emergency': { color: '#cc00ff', className: 'pulsing-layer' },
-            'Flash Flood Warning': { color: '#880000', className: 'pulsing-layer' },
-            'Flood Advisory': { color: '#ffff00', dashArray: '10, 10', fillOpacity: 0.3 },
-            'Flood Watch': { color: '#aaff00', dashArray: '10, 10', fillOpacity: 0.3 },
-            'Flood Warning': { color: '#007700', className: 'pulsing-layer' },
-            'Coastal Flood Advisory': { color: '#77aaff', dashArray: '10, 10', fillOpacity: 0.3 },
-            'Coastal Flood Warning': { color: '#0055ff', className: 'pulsing-layer' },
-            'Coastal Flood Statement': { color: '#aaccff', dashArray: '5, 5', fillOpacity: 0.2 },
-            'Severe Thunderstorm Warning': { color: '#ff0000', dashArray: '10, 10', className: 'pulsing-layer' },
-            'Severe Thunderstorm Watch': { color: '#ffcc00', fillOpacity: 0.3 },
-            'Special Weather Statement': { color: '#cccccc', dashArray: '5, 5', fillOpacity: 0.2 },
-            'Winter Storm Warning': { color: '#00aaff', className: 'pulsing-layer' },
-            'Winter Storm Watch': { color: '#00ccff', dashArray: '10, 10', fillOpacity: 0.3 },
-            'Winter Weather Advisory': { color: '#00ffff', dashArray: '5, 5', fillOpacity: 0.3 },
-            'Blizzard Warning': { color: '#ffffff', className: 'pulsing-layer' },
-            'Wind Advisory': { color: '#ffaa00', dashArray: '5, 5', fillOpacity: 0.3 },
-            'High Wind Warning': { color: '#ff7700', className: 'pulsing-layer' },
-            'Gale Warning': { color: '#0077ff', dashArray: '10, 10', fillOpacity: 0.3 },
-            'Gale Watch': { color: '#0055cc', dashArray: '10, 10', fillOpacity: 0.3 },
-            'Small Craft Advisory': { color: '#5555ff', dashArray: '5, 5', fillOpacity: 0.3 },
-            'Marine Weather Statement': { color: '#aaaaff', dashArray: '5, 5', fillOpacity: 0.2 },
-            'Tropical Storm Warning': { color: '#00ddcc', className: 'pulsing-layer' },
-            'Tropical Storm Watch': { color: '#00ffee', dashArray: '10, 10', fillOpacity: 0.3 },
-            'Hurricane Warning': { color: '#ff0000', className: 'pulsing-layer' },
-            'Hurricane Watch': { color: '#ff8888', dashArray: '10, 10', fillOpacity: 0.3 },
-            'Heat Advisory': { color: '#ff5500', dashArray: '5, 5', fillOpacity: 0.3 },
-            'Excessive Heat Warning': { color: '#ff0000', className: 'pulsing-layer' },
-            'Dense Fog Advisory': { color: '#aaaaaa', dashArray: '5, 5', fillOpacity: 0.3 },
-            'Dense Smoke Advisory': { color: '#666666', dashArray: '5, 5', fillOpacity: 0.3 },
-            'Air Quality Alert': { color: '#aa66aa', dashArray: '5, 5', fillOpacity: 0.3 },
-            'Rip Current Statement': { color: '#00ccff', dashArray: '5, 5', fillOpacity: 0.3 },
-            'Beach Hazards Statement': { color: '#00aacc', dashArray: '5, 5', fillOpacity: 0.3 },
-            'Lake Wind Advisory': { color: '#55aaff', dashArray: '5, 5', fillOpacity: 0.3 },
-            'Frost Advisory': { color: '#ccffff', dashArray: '5, 5', fillOpacity: 0.3 },
-            'Freeze Warning': { color: '#00ffff', className: 'pulsing-layer' },
-            'Freeze Watch': { color: '#00cccc', dashArray: '10, 10', fillOpacity: 0.3 },
-            'Ashfall Advisory': { color: '#888888', dashArray: '5, 5', fillOpacity: 0.3 },
-            'Dust Storm Warning': { color: '#ccaa00', className: 'pulsing-layer' },
-            'Dust Storm Advisory': { color: '#ccbb77', dashArray: '5, 5', fillOpacity: 0.3 },
-            'Snow Squall Warning': { color: '#ffffff', className: 'pulsing-layer' },
-            'Extreme Wind Warning': { color: '#ff00ff', className: 'pulsing-layer' },
-            'Special Marine Warning': { color: '#ff5555', className: 'pulsing-layer' },
-            '_default': { color: '#5555ff', fillOpacity: 0.3 }
+            'Tornado Warning': { color: '#ff0000', className: 'pulsing-layer', severityRank: 1 },
+            'Tornado Watch': { color: '#ffcc00', dashArray: '10, 10', fillOpacity: 0.3, severityRank: 2 },
+            'Tornado Emergency': { color: '#cc00ff', className: 'pulsing-layer', severityRank: 0 },
+            'Flash Flood Warning': { color: '#880000', className: 'pulsing-layer', severityRank: 2 },
+            'Flood Advisory': { color: '#ffff00', dashArray: '10, 10', fillOpacity: 0.3, severityRank: 5 },
+            'Flood Watch': { color: '#aaff00', dashArray: '10, 10', fillOpacity: 0.3, severityRank: 4 },
+            'Flood Warning': { color: '#007700', className: 'pulsing-layer', severityRank: 2 },
+            'Coastal Flood Advisory': { color: '#77aaff', dashArray: '10, 10', fillOpacity: 0.3, severityRank: 5 },
+            'Coastal Flood Warning': { color: '#0055ff', className: 'pulsing-layer', severityRank: 2 },
+            'Coastal Flood Statement': { color: '#aaccff', dashArray: '5, 5', fillOpacity: 0.2, severityRank: 6 },
+            'Severe Thunderstorm Warning': { color: '#ff0000', dashArray: '10, 10', className: 'pulsing-layer', severityRank: 2 },
+            'Severe Thunderstorm Watch': { color: '#ffcc00', fillOpacity: 0.3, severityRank: 3 },
+            'Special Weather Statement': { color: '#cccccc', dashArray: '5, 5', fillOpacity: 0.2, severityRank: 7 },
+            'Winter Storm Warning': { color: '#00aaff', className: 'pulsing-layer', severityRank: 2 },
+            'Winter Storm Watch': { color: '#00ccff', dashArray: '10, 10', fillOpacity: 0.3, severityRank: 3 },
+            'Winter Weather Advisory': { color: '#00ffff', dashArray: '5, 5', fillOpacity: 0.3, severityRank: 4 },
+            'Blizzard Warning': { color: '#ffffff', className: 'pulsing-layer', severityRank: 1 },
+            'Wind Advisory': { color: '#ffaa00', dashArray: '5, 5', fillOpacity: 0.3, severityRank: 5 },
+            'High Wind Warning': { color: '#ff7700', className: 'pulsing-layer', severityRank: 2 },
+            'Gale Warning': { color: '#0077ff', dashArray: '10, 10', fillOpacity: 0.3, severityRank: 3 },
+            'Gale Watch': { color: '#0055cc', dashArray: '10, 10', fillOpacity: 0.3, severityRank: 4 },
+            'Small Craft Advisory': { color: '#5555ff', dashArray: '5, 5', fillOpacity: 0.3, severityRank: 6 },
+            'Marine Weather Statement': { color: '#aaaaff', dashArray: '5, 5', fillOpacity: 0.2, severityRank: 8 },
+            'Tropical Storm Warning': { color: '#00ddcc', className: 'pulsing-layer', severityRank: 1 },
+            'Tropical Storm Watch': { color: '#00ffee', dashArray: '10, 10', fillOpacity: 0.3, severityRank: 3 },
+            'Hurricane Warning': { color: '#ff0000', className: 'pulsing-layer', severityRank: 0 },
+            'Hurricane Watch': { color: '#ff8888', dashArray: '10, 10', fillOpacity: 0.3, severityRank: 2 },
+            'Heat Advisory': { color: '#ff5500', dashArray: '5, 5', fillOpacity: 0.3, severityRank: 3 },
+            'Excessive Heat Warning': { color: '#ff0000', className: 'pulsing-layer', severityRank: 1 },
+            'Dense Fog Advisory': { color: '#aaaaaa', dashArray: '5, 5', fillOpacity: 0.3, severityRank: 6 },
+            'Dense Smoke Advisory': { color: '#666666', dashArray: '5, 5', fillOpacity: 0.3, severityRank: 6 },
+            'Air Quality Alert': { color: '#aa66aa', dashArray: '5, 5', fillOpacity: 0.3, severityRank: 7 },
+            'Rip Current Statement': { color: '#00ccff', dashArray: '5, 5', fillOpacity: 0.3, severityRank: 8 },
+            'Beach Hazards Statement': { color: '#00aacc', dashArray: '5, 5', fillOpacity: 0.3, severityRank: 8 },
+            'Lake Wind Advisory': { color: '#55aaff', dashArray: '5, 5', fillOpacity: 0.3, severityRank: 6 },
+            'Frost Advisory': { color: '#ccffff', dashArray: '5, 5', fillOpacity: 0.3, severityRank: 5 },
+            'Freeze Warning': { color: '#00ffff', className: 'pulsing-layer', severityRank: 2 },
+            'Freeze Watch': { color: '#00cccc', dashArray: '10, 10', fillOpacity: 0.3, severityRank: 4 },
+            'Ashfall Advisory': { color: '#888888', dashArray: '5, 5', fillOpacity: 0.3, severityRank: 6 },
+            'Dust Storm Warning': { color: '#ccaa00', className: 'pulsing-layer', severityRank: 1 },
+            'Dust Storm Advisory': { color: '#ccbb77', dashArray: '5, 5', fillOpacity: 0.3, severityRank: 5 },
+            'Snow Squall Warning': { color: '#ffffff', className: 'pulsing-layer', severityRank: 1 },
+            'Extreme Wind Warning': { color: '#ff00ff', className: 'pulsing-layer', severityRank: 0 },
+            'Special Marine Warning': { color: '#ff5555', className: 'pulsing-layer', severityRank: 1 },
+            '_default': { color: '#5555ff', fillOpacity: 0.3, severityRank: 99 }
         };
 
         function getAlertStyle(properties) {
@@ -380,7 +380,8 @@
                 fillColor: styleConfig.color,
                 fillOpacity: styleConfig.fillOpacity || 0.3,
                 dashArray: styleConfig.dashArray,
-                className: styleConfig.className
+                className: styleConfig.className,
+                severityRank: styleConfig.severityRank !== undefined ? styleConfig.severityRank : 99
             };
         }
 
@@ -429,9 +430,7 @@
         }
 
         async function loadMarineZones() {
-            // NOAA marine zones GeoJSON: https://www.weather.gov/source/gis/marine/Maplayers/MarineZones.zip (converted to GeoJSON elsewhere)
             try {
-                // For this example, fallback to a dummy empty geojson, but you can swap this with a real endpoint for marine zones
                 marineZonesGeoJSON = { type: "FeatureCollection", features: [] };
             } catch (error) {
                 console.error('Error loading marine zones:', error);
@@ -570,7 +569,6 @@
                         layer = L.featureGroup(polygons).bindPopup(createPopupContent(properties));
                     }
                 } else if (
-                    // If no geometry, but has geocode and forecast area, draw those as polygons (show as a union)
                     !geometry && properties.geocode && properties.geocode.UGC && window.countyLookup && countyFeatureCollection
                 ) {
                     const ugcCodes = properties.geocode.UGC;
@@ -603,7 +601,6 @@
         }
 
         function renderActiveCountyView() {
-            // Draw all county outlines in gray (inactive), then fill counties under alert with alert color
             countyOutlinesLayer = L.geoJSON(countyFeatureCollection, {
                 style: function() {
                     return {
@@ -646,13 +643,22 @@
             for (const fips in countyAlertsByFIPS) {
                 const base = window.countyLookup[fips];
                 if (base) {
-                    // Use the most severe alert's style (first in list, or sort by severity if wanted)
-                    const alertObj = countyAlertsByFIPS[fips][0];
-                    const feature = JSON.parse(JSON.stringify(base));
-                    feature.properties = feature.properties || {};
-                    feature.properties._alert = alertObj.alert;
-                    feature.properties._alertStyle = alertObj.style;
-                    countyAlertFeatures.push(feature);
+                    let highestSeverityIdx = 99;
+                    let mostSevereAlertObj = null;
+                    for (const alertObj of countyAlertsByFIPS[fips]) {
+                        const sRank = alertObj.style.severityRank !== undefined ? alertObj.style.severityRank : 99;
+                        if (sRank < highestSeverityIdx) {
+                            highestSeverityIdx = sRank;
+                            mostSevereAlertObj = alertObj;
+                        }
+                    }
+                    if (mostSevereAlertObj) {
+                        const feature = JSON.parse(JSON.stringify(base));
+                        feature.properties = feature.properties || {};
+                        feature.properties._alert = mostSevereAlertObj.alert;
+                        feature.properties._alertStyle = mostSevereAlertObj.style;
+                        countyAlertFeatures.push(feature);
+                    }
                 }
             }
 
@@ -663,10 +669,10 @@
                         style: function(f) {
                             const s = f.properties._alertStyle || {};
                             return {
-                                color: s.color || "#fff",
+                                color: "#222",
                                 weight: 2,
                                 fillColor: s.color || "#fff",
-                                fillOpacity: (s.fillOpacity !== undefined ? s.fillOpacity : 0.55),
+                                fillOpacity: (s.fillOpacity !== undefined ? s.fillOpacity : 0.7),
                                 className: "active-county " + (s.className || ""),
                                 dashArray: s.dashArray || null
                             };
