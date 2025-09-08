@@ -203,6 +203,25 @@
         .filter-checkbox {
             margin: 0.3rem 0;
         }
+        
+        .progress-bar {
+            position: absolute;
+            bottom: 3.5rem;
+            left: 1rem;
+            width: 200px;
+            height: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            overflow: hidden;
+            z-index: 1000;
+        }
+        
+        .progress {
+            height: 100%;
+            background-color: #3498db;
+            width: 0%;
+            transition: width 0.3s;
+        }
     </style>
 </head>
 <body>
@@ -244,6 +263,10 @@
         
         <div class="refresh-info">
             Data refreshes every minute. Last updated: <span id="last-updated">-</span>
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress" id="progress-bar"></div>
         </div>
         
         <div class="loading" id="loading">
@@ -456,146 +479,178 @@
             }
             Object.keys(alertLayers).forEach(key => delete alertLayers[key]);
             
+            // Reset alert types
+            alertTypes = {};
+            
             // Fetch active alerts
             fetch('https://api.weather.gov/alerts/active')
                 .then(response => response.json())
                 .then(data => {
-                    processAlerts(data.features);
                     document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
+                    
+                    // Process alerts one at a time with a delay to prevent UI freezing
+                    processAlertsSequentially(data.features);
                 })
                 .catch(error => {
                     console.error('Error fetching weather data:', error);
-                })
-                .finally(() => {
                     document.getElementById('loading').style.display = 'none';
                 });
         }
         
-        // Process alerts and add to map
-        function processAlerts(alerts) {
-            // Reset alert types
-            alertTypes = {};
+        // Process alerts sequentially with a small delay between each
+        function processAlertsSequentially(alerts) {
+            const totalAlerts = alerts.length;
+            let processedCount = 0;
             
-            alerts.forEach(alert => {
-                const properties = alert.properties;
-                const geometry = alert.geometry;
-                
-                // Track this alert type
-                alertTypes[properties.event] = true;
-                
-                // Determine the style based on alert type
-                const style = getAlertStyle(properties);
-                
-                let layer = null;
-                
-                // Handle polygon-based alerts (these have direct geometry)
-                if (geometry && (geometry.type === 'Polygon' || geometry.type === 'MultiPolygon')) {
-                    if (geometry.type === 'Polygon') {
-                        const coordinates = geometry.coordinates[0];
-                        const latLngs = coordinates.map(coord => [coord[1], coord[0]]);
-                        
-                        layer = L.polygon(latLngs, style)
-                            .addTo(map)
-                            .bindPopup(createPopupContent(properties));
-                    } 
-                    else if (geometry.type === 'MultiPolygon') {
-                        const polygons = geometry.coordinates.map(polygonCoords => {
-                            const latLngs = polygonCoords[0].map(coord => [coord[1], coord[0]]);
-                            return L.polygon(latLngs, style);
-                        });
-                        
-                        layer = L.featureGroup(polygons)
-                            .addTo(map)
-                            .bindPopup(createPopupContent(properties));
+            // Update progress bar
+            const progressBar = document.getElementById('progress-bar');
+            progressBar.style.width = '0%';
+            
+            // Function to process next alert
+            function processNextAlert() {
+                if (processedCount >= totalAlerts) {
+                    // All alerts processed
+                    document.getElementById('loading').style.display = 'none';
+                    
+                    // Update filters and legend
+                    updateFiltersAndLegend();
+                    
+                    // Check if user is in any alert area
+                    if (userLocation) {
+                        checkUserInAlertArea();
                     }
+                    
+                    return;
+                }
+                
+                const alert = alerts[processedCount];
+                processSingleAlert(alert);
+                
+                // Update progress
+                processedCount++;
+                const progressPercent = (processedCount / totalAlerts) * 100;
+                progressBar.style.width = `${progressPercent}%`;
+                
+                // Process next alert with a small delay to prevent UI freezing
+                setTimeout(processNextAlert, 10);
+            }
+            
+            // Start processing
+            processNextAlert();
+        }
+        
+        // Process a single alert
+        function processSingleAlert(alert) {
+            const properties = alert.properties;
+            const geometry = alert.geometry;
+            
+            // Track this alert type
+            alertTypes[properties.event] = true;
+            
+            // Determine the style based on alert type
+            const style = getAlertStyle(properties);
+            
+            let layer = null;
+            
+            // Handle polygon-based alerts (these have direct geometry)
+            if (geometry && (geometry.type === 'Polygon' || geometry.type === 'MultiPolygon')) {
+                if (geometry.type === 'Polygon') {
+                    const coordinates = geometry.coordinates[0];
+                    const latLngs = coordinates.map(coord => [coord[1], coord[0]]);
+                    
+                    layer = L.polygon(latLngs, style)
+                        .addTo(map)
+                        .bindPopup(createPopupContent(properties));
                 } 
-                // Handle county-based alerts (like watches) - these have UGC codes but no polygon geometry
-                else if (properties.geocode && properties.geocode.UGC && window.countyLookup) {
-                    const ugcCodes = properties.geocode.UGC;
-                    
-                    // Create a feature group for all county outlines
-                    const countyOutlines = [];
-                    
-                    // Find and add each county geometry
-                    ugcCodes.forEach(ugcCode => {
-                        // Only process county codes (format: SSCCCCC where C is county)
-                        if (ugcCode.length === 6) {
-                            const countyGeometry = findCountyGeometry(ugcCode);
-                            if (countyGeometry) {
-                                const countyLayer = L.geoJSON(countyGeometry, {
-                                    style: style,
-                                    onEachFeature: function(feature, layer) {
-                                        layer.bindPopup(createPopupContent(properties));
-                                    }
-                                });
-                                countyOutlines.push(countyLayer);
-                            }
-                        }
+                else if (geometry.type === 'MultiPolygon') {
+                    const polygons = geometry.coordinates.map(polygonCoords => {
+                        const latLngs = polygonCoords[0].map(coord => [coord[1], coord[0]]);
+                        return L.polygon(latLngs, style);
                     });
                     
-                    if (countyOutlines.length > 0) {
-                        layer = L.featureGroup(countyOutlines).addTo(map);
-                    }
+                    layer = L.featureGroup(polygons)
+                        .addTo(map)
+                        .bindPopup(createPopupContent(properties));
                 }
-                // Handle zone-based alerts (these have SAME codes mapping to counties)
-                else if (properties.geocode && properties.geocode.SAME && window.countyLookup) {
-                    const sameCodes = properties.geocode.SAME;
-                    
-                    // Create a feature group for all county outlines
-                    const countyOutlines = [];
-                    
-                    // Find and add each county geometry
-                    sameCodes.forEach(sameCode => {
-                        // SAME codes are 6 digits: SSCCCC (State, County)
-                        if (sameCode.length === 6) {
-                            // Convert to FIPS code (remove leading zero if present)
-                            const stateCode = sameCode.substring(0, 2);
-                            const countyCode = sameCode.substring(2);
-                            const fipsCode = (parseInt(stateCode) + countyCode).toString();
-                            
-                            const countyGeometry = window.countyLookup[fipsCode];
-                            if (countyGeometry) {
-                                const countyLayer = L.geoJSON(countyGeometry, {
-                                    style: style,
-                                    onEachFeature: function(feature, layer) {
-                                        layer.bindPopup(createPopupContent(properties));
-                                    }
-                                });
-                                countyOutlines.push(countyLayer);
-                            }
-                        }
-                    });
-                    
-                    if (countyOutlines.length > 0) {
-                        layer = L.featureGroup(countyOutlines).addTo(map);
-                    }
-                }
+            } 
+            // Handle county-based alerts (like watches) - these have UGC codes but no polygon geometry
+            else if (properties.geocode && properties.geocode.UGC && window.countyLookup) {
+                const ugcCodes = properties.geocode.UGC;
                 
-                // Add event listeners for hover
-                if (layer) {
-                    layer.on('mouseover', function(e) {
-                        if (e.layer && e.layer.getLatLng) {
-                            showInfoPanel(properties, e.layer.getLatLng());
-                        } else if (e.latlng) {
-                            showInfoPanel(properties, e.latlng);
+                // Create a feature group for all county outlines
+                const countyOutlines = [];
+                
+                // Find and add each county geometry
+                ugcCodes.forEach(ugcCode => {
+                    // Only process county codes (format: SSCCCCC where C is county)
+                    if (ugcCode.length === 6) {
+                        const countyGeometry = findCountyGeometry(ugcCode);
+                        if (countyGeometry) {
+                            const countyLayer = L.geoJSON(countyGeometry, {
+                                style: style,
+                                onEachFeature: function(feature, layer) {
+                                    layer.bindPopup(createPopupContent(properties));
+                                }
+                            });
+                            countyOutlines.push(countyLayer);
                         }
-                    });
-                    
-                    layer.on('mouseout', function() {
-                        hideInfoPanel();
-                    });
-                    
-                    // Store reference to layer
-                    alertLayers[properties.id] = layer;
+                    }
+                });
+                
+                if (countyOutlines.length > 0) {
+                    layer = L.featureGroup(countyOutlines).addTo(map);
                 }
-            });
+            }
+            // Handle zone-based alerts (these have SAME codes mapping to counties)
+            else if (properties.geocode && properties.geocode.SAME && window.countyLookup) {
+                const sameCodes = properties.geocode.SAME;
+                
+                // Create a feature group for all county outlines
+                const countyOutlines = [];
+                
+                // Find and add each county geometry
+                sameCodes.forEach(sameCode => {
+                    // SAME codes are 6 digits: SSCCCC (State, County)
+                    if (sameCode.length === 6) {
+                        // Convert to FIPS code (remove leading zero if present)
+                        const stateCode = sameCode.substring(0, 2);
+                        const countyCode = sameCode.substring(2);
+                        const fipsCode = (parseInt(stateCode) + countyCode).toString();
+                        
+                        const countyGeometry = window.countyLookup[fipsCode];
+                        if (countyGeometry) {
+                            const countyLayer = L.geoJSON(countyGeometry, {
+                                style: style,
+                                onEachFeature: function(feature, layer) {
+                                    layer.bindPopup(createPopupContent(properties));
+                                }
+                            });
+                            countyOutlines.push(countyLayer);
+                        }
+                    }
+                });
+                
+                if (countyOutlines.length > 0) {
+                    layer = L.featureGroup(countyOutlines).addTo(map);
+                }
+            }
             
-            // Update filters and legend
-            updateFiltersAndLegend();
-            
-            // Check if user is in any alert area
-            if (userLocation) {
-                checkUserInAlertArea();
+            // Add event listeners for hover
+            if (layer) {
+                layer.on('mouseover', function(e) {
+                    if (e.layer && e.layer.getLatLng) {
+                        showInfoPanel(properties, e.layer.getLatLng());
+                    } else if (e.latlng) {
+                        showInfoPanel(properties, e.latlng);
+                    }
+                });
+                
+                layer.on('mouseout', function() {
+                    hideInfoPanel();
+                });
+                
+                // Store reference to layer
+                alertLayers[properties.id] = layer;
             }
         }
         
