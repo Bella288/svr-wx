@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Severe Weather Tracker</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #f0f2f5;
+        }
+        
+        header {
+            background: linear-gradient(to right, #2c3e50, #4a6491);
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .logo i {
+            font-size: 1.8rem;
+        }
+        
+        .address-form {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .address-input {
+            padding: 0.5rem;
+            border: none;
+            border-radius: 4px;
+            width: 250px;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .alert-banner {
+            background-color: #e74c3c;
+            color: white;
+            padding: 0.8rem;
+            text-align: center;
+            display: none;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            position: relative;
+            z-index: 1000;
+        }
+        
+        .alert-banner.active {
+            display: block;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+        
+        .map-container {
+            flex: 1;
+            position: relative;
+        }
+        
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+        
+        .info-panel {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background-color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            max-width: 300px;
+            display: none;
+        }
+        
+        .info-panel h3 {
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 0.5rem;
+        }
+        
+        .info-panel p {
+            margin: 0.3rem 0;
+            color: #34495e;
+        }
+        
+        .legend {
+            position: absolute;
+            bottom: 1rem;
+            right: 1rem;
+            background-color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
+        
+        .legend h3 {
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 0.5rem;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 0.3rem 0;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 0.5rem;
+            border-radius: 3px;
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            display: none;
+        }
+        
+        .refresh-info {
+            position: absolute;
+            bottom: 1rem;
+            left: 1rem;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <i>🌪️</i>
+            <h1>Severe Weather Tracker</h1>
+        </div>
+        <div class="address-form">
+            <input type="text" class="address-input" placeholder="Enter your address" id="address-input">
+            <button id="save-address">Save Location</button>
+        </div>
+    </header>
+    
+    <div class="alert-banner" id="alert-banner">
+        <!-- Alert content will be inserted here -->
+    </div>
+    
+    <div class="map-container">
+        <div id="map"></div>
+        
+        <div class="info-panel" id="info-panel">
+            <!-- Alert details will be inserted here -->
+        </div>
+        
+        <div class="legend">
+            <h3>Legend</h3>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #ffcc00; border: 2px dashed #ff9900;"></div>
+                <span>Tornado Watch</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #ff0000;"></div>
+                <span>Tornado Warning</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #cc00ff;"></div>
+                <span>Tornado Emergency</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #ffff00; border: 2px dashed #cccc00;"></div>
+                <span>Flood Advisory</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #aaff00; border: 2px dashed #88cc00;"></div>
+                <span>Flood Watch</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #007700;"></div>
+                <span>Flood Warning</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #ffcc00;"></div>
+                <span>Severe Thunderstorm Watch</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #ff0000; border: 2px dashed #cc0000;"></div>
+                <span>Severe Thunderstorm Warning</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #cc00ff; border: 2px dashed #9900cc;"></div>
+                <span>Destructive Thunderstorm</span>
+            </div>
+        </div>
+        
+        <div class="refresh-info">
+            Data refreshes every minute. Last updated: <span id="last-updated">-</span>
+        </div>
+        
+        <div class="loading" id="loading">
+            Loading weather data...
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        // Initialize the map
+        const map = L.map('map').setView([39.8283, -98.5795], 4); // Center on US
+        
+        // Add base tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        // Store references to layers and markers
+        const alertLayers = {};
+        let userMarker = null;
+        let userLocation = null;
+        
+        // Check for saved address in localStorage
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedAddress = localStorage.getItem('weatherTrackerAddress');
+            if (savedAddress) {
+                document.getElementById('address-input').value = savedAddress;
+                geocodeAddress(savedAddress);
+            }
+            
+            // Load initial data
+            fetchWeatherData();
+            
+            // Set up interval to refresh data every minute
+            setInterval(fetchWeatherData, 60000);
+            
+            // Set up event listener for save address button
+            document.getElementById('save-address').addEventListener('click', saveAddress);
+        });
+        
+        // Save address to localStorage
+        function saveAddress() {
+            const address = document.getElementById('address-input').value;
+            if (address.trim() !== '') {
+                localStorage.setItem('weatherTrackerAddress', address);
+                geocodeAddress(address);
+            }
+        }
+        
+        // Geocode address to coordinates
+        function geocodeAddress(address) {
+            document.getElementById('loading').style.display = 'block';
+            
+            // Using Nominatim for geocoding (OpenStreetMap)
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        const lat = parseFloat(data[0].lat);
+                        const lon = parseFloat(data[0].lon);
+                        
+                        userLocation = { lat, lon };
+                        
+                        // Update map view
+                        map.setView([lat, lon], 9);
+                        
+                        // Remove existing user marker if any
+                        if (userMarker) {
+                            map.removeLayer(userMarker);
+                        }
+                        
+                        // Add marker for user location
+                        userMarker = L.marker([lat, lon])
+                            .addTo(map)
+                            .bindPopup('Your location')
+                            .openPopup();
+                            
+                        // Check if user is in any alert area
+                        checkUserInAlertArea();
+                    } else {
+                        alert('Address not found. Please try a more specific address.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Geocoding error:', error);
+                    alert('Error finding address. Please try again.');
+                })
+                .finally(() => {
+                    document.getElementById('loading').style.display = 'none';
+                });
+        }
+        
+        // Fetch weather data from NWS API
+        function fetchWeatherData() {
+            document.getElementById('loading').style.display = 'block';
+            
+            // Clear existing alert layers
+            for (const id in alertLayers) {
+                map.removeLayer(alertLayers[id]);
+            }
+            
+            // Fetch active alerts
+            fetch('https://api.weather.gov/alerts/active')
+                .then(response => response.json())
+                .then(data => {
+                    processAlerts(data.features);
+                    document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
+                })
+                .catch(error => {
+                    console.error('Error fetching weather data:', error);
+                })
+                .finally(() => {
+                    document.getElementById('loading').style.display = 'none';
+                });
+        }
+        
+        // Process alerts and add to map
+        function processAlerts(alerts) {
+            alerts.forEach(alert => {
+                const properties = alert.properties;
+                const geometry = alert.geometry;
+                
+                // Skip alerts without geometry (except for watches which are county-based)
+                if (!geometry && !properties.geocode) {
+                    return;
+                }
+                
+                // Determine the style based on alert type
+                const style = getAlertStyle(properties);
+                
+                let layer = null;
+                
+                // Handle polygon-based alerts
+                if (geometry && geometry.type === 'Polygon') {
+                    const coordinates = geometry.coordinates[0];
+                    const latLngs = coordinates.map(coord => [coord[1], coord[0]]);
+                    
+                    layer = L.polygon(latLngs, style)
+                        .addTo(map)
+                        .bindPopup(createPopupContent(properties));
+                } 
+                // Handle county-based alerts (like watches)
+                else if (properties.geocode && properties.geocode.SAME) {
+                    // For simplicity, we'll just show a marker for county-based alerts
+                    // In a real app, you'd want to fetch county shapes and display them
+                    const centroid = calculateCentroidFromUGC(properties.geocode.UGC[0]);
+                    if (centroid) {
+                        layer = L.circleMarker([centroid.lat, centroid.lng], {
+                            radius: 15,
+                            fillColor: style.color,
+                            color: style.color,
+                            weight: 2,
+                            opacity: 1,
+                            fillOpacity: 0.7
+                        })
+                        .addTo(map)
+                        .bindPopup(createPopupContent(properties));
+                    }
+                }
+                
+                // Add event listeners for hover
+                if (layer) {
+                    layer.on('mouseover', function(e) {
+                        showInfoPanel(properties, e.latlng);
+                    });
+                    
+                    layer.on('mouseout', function() {
+                        hideInfoPanel();
+                    });
+                    
+                    // Store reference to layer
+                    alertLayers[properties.id] = layer;
+                }
+            });
+            
+            // Check if user is in any alert area
+            if (userLocation) {
+                checkUserInAlertArea();
+            }
+        }
+        
+        // Get style for alert type
+        function getAlertStyle(properties) {
+            const eventType = properties.event.toLowerCase();
+            const severity = properties.severity.toLowerCase();
+            
+            if (eventType.includes('tornado')) {
+                if (eventType.includes('watch')) {
+                    return {
+                        color: '#ffcc00',
+                        weight: 3,
+                        opacity: 1,
+                        fillColor: '#ffcc00',
+                        fillOpacity: 0.3,
+                        dashArray: '10, 10'
+                    };
+                } else if (eventType.includes('emergency')) {
+                    return {
+                        color: '#cc00ff',
+                        weight: 3,
+                        opacity: 1,
+                        fillColor: '#cc00ff',
+                        fillOpacity: 0.3,
+                        className: 'pulsing-layer'
+                    };
+                } else {
+                    return {
+                        color: '#ff0000',
+                        weight: 3,
+                        opacity: 1,
+                        fillColor: '#ff0000',
+                        fillOpacity: 0.3,
+                        className: 'pulsing-layer'
+                    };
+                }
+            } else if (eventType.includes('flood')) {
+                if (eventType.includes('advisory')) {
+                    return {
+                        color: '#ffff00',
+                        weight: 3,
+                        opacity: 1,
+                        fillColor: '#ffff00',
+                        fillOpacity: 0.3,
+                        dashArray: '10, 10'
+                    };
+                } else if (eventType.includes('watch')) {
+                    return {
+                        color: '#aaff00',
+                        weight: 3,
+                        opacity: 1,
+                        fillColor: '#aaff00',
+                        fillOpacity: 0.3,
+                        dashArray: '10, 10',
+                        className: 'pulsing-layer'
+                    };
+                } else {
+                    return {
+                        color: '#007700',
+                        weight: 3,
+                        opacity: 1,
+                        fillColor: '#007700',
+                        fillOpacity: 0.3,
+                        className: 'pulsing-layer'
+                    };
+                }
+            } else if (eventType.includes('thunderstorm')) {
+                if (eventType.includes('watch')) {
+                    return {
+                        color: '#ffcc00',
+                        weight: 3,
+                        opacity: 1,
+                        fillColor: '#ffcc00',
+                        fillOpacity: 0.3
+                    };
+                } else if (properties.headline && properties.headline.includes('Destructive')) {
+                    return {
+                        color: '#cc00ff',
+                        weight: 3,
+                        opacity: 1,
+                        fillColor: '#cc00ff',
+                        fillOpacity: 0.3,
+                        dashArray: '10, 10',
+                        className: 'pulsing-layer'
+                    };
+                } else {
+                    return {
+                        color: '#ff0000',
+                        weight: 3,
+                        opacity: 1,
+                        fillColor: '#ff0000',
+                        fillOpacity: 0.3,
+                        dashArray: '10, 10'
+                    };
+                }
+            }
+            
+            // Default style for other alerts
+            return {
+                color: '#5555ff',
+                weight: 3,
+                opacity: 1,
+                fillColor: '#5555ff',
+                fillOpacity: 0.3
+            };
+        }
+        
+        // Create popup content for alerts
+        function createPopupContent(properties) {
+            return `
+                <div>
+                    <h3>${properties.event}</h3>
+                    <p><strong>Area:</strong> ${properties.areaDesc}</p>
+                    <p><strong>Severity:</strong> ${properties.severity}</p>
+                    <p><strong>Effective:</strong> ${new Date(properties.effective).toLocaleString()}</p>
+                    <p><strong>Expires:</strong> ${new Date(properties.expires).toLocaleString()}</p>
+                    <p>${properties.description}</p>
+                    <p><a href="${properties.instruction}" target="_blank">Instructions</a></p>
+                </div>
+            `;
+        }
+        
+        // Show info panel on hover
+        function showInfoPanel(properties, latlng) {
+            const infoPanel = document.getElementById('info-panel');
+            infoPanel.innerHTML = `
+                <h3>${properties.event}</h3>
+                <p><strong>Area:</strong> ${properties.areaDesc}</p>
+                <p><strong>Severity:</strong> ${properties.severity}</p>
+                <p><strong>Effective:</strong> ${new Date(properties.effective).toLocaleString()}</p>
+                <p><strong>Expires:</strong> ${new Date(properties.expires).toLocaleString()}</p>
+                <p>${properties.headline || properties.description.substring(0, 100)}...</p>
+            `;
+            
+            // Position the panel near the mouse
+            const point = map.latLngToContainerPoint(latlng);
+            infoPanel.style.left = (point.x + 10) + 'px';
+            infoPanel.style.top = (point.y + 10) + 'px';
+            infoPanel.style.display = 'block';
+        }
+        
+        // Hide info panel
+        function hideInfoPanel() {
+            document.getElementById('info-panel').style.display = 'none';
+        }
+        
+        // Check if user is in any alert area
+        function checkUserInAlertArea() {
+            if (!userLocation) return;
+            
+            const banner = document.getElementById('alert-banner');
+            let userInAlert = false;
+            let highestSeverityAlert = null;
+            
+            // Check each alert to see if user is inside
+            for (const id in alertLayers) {
+                const layer = alertLayers[id];
+                
+                // For polygon layers
+                if (layer instanceof L.Polygon) {
+                    if (layer.getBounds().contains([userLocation.lat, userLocation.lng])) {
+                        userInAlert = true;
+                        
+                        // Get the alert properties from the popup content
+                        const popupContent = layer.getPopup().getContent();
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(popupContent, 'text/html');
+                        const eventType = doc.querySelector('h3').textContent;
+                        
+                        // Prioritize tornado warnings/emergencies
+                        if (eventType.includes('Tornado Emergency')) {
+                            highestSeverityAlert = {id, eventType};
+                            break;
+                        } else if (eventType.includes('Tornado Warning') && 
+                                  (!highestSeverityAlert || !highestSeverityAlert.eventType.includes('Tornado Emergency'))) {
+                            highestSeverityAlert = {id, eventType};
+                        } else if (!highestSeverityAlert) {
+                            highestSeverityAlert = {id, eventType};
+                        }
+                    }
+                }
+            }
+            
+            // Show banner if user is in an alert area
+            if (userInAlert && highestSeverityAlert) {
+                const alert = highestSeverityAlert;
+                banner.innerHTML = `
+                    <strong>${alert.eventType}</strong> is in effect for your location. 
+                    <a href="#" onclick="focusOnAlert('${alert.id}')">View details</a>
+                `;
+                banner.classList.add('active');
+            } else {
+                banner.classList.remove('active');
+            }
+        }
+        
+        // Focus on a specific alert
+        function focusOnAlert(alertId) {
+            const layer = alertLayers[alertId];
+            if (layer) {
+                if (layer instanceof L.Polygon) {
+                    map.fitBounds(layer.getBounds());
+                }
+                layer.openPopup();
+            }
+        }
+        
+        // Calculate centroid from UGC code (simplified)
+        function calculateCentroidFromUGC(ugcCode) {
+            // This is a simplified approach - in a real app, you'd want a proper mapping
+            // of UGC codes to geographic coordinates
+            const stateCode = ugcCode.substring(0, 2);
+            
+            // Just return a rough centroid for the state
+            const stateCentroids = {
+                'AL': { lat: 32.806671, lng: -86.791130 },
+                'AK': { lat: 61.370716, lng: -152.404419 },
+                'AZ': { lat: 33.729759, lng: -111.431221 },
+                'AR': { lat: 34.969704, lng: -92.373123 },
+                // Add more states as needed...
+            };
+            
+            return stateCentroids[stateCode] || null;
+        }
+        
+        // Add CSS for pulsing animation
+        const style = document.createElement('style');
+        style.textContent = `
+            .pulsing-layer {
+                animation: pulse-animation 2s infinite;
+            }
+            
+            @keyframes pulse-animation {
+                0% { opacity: 0.7; }
+                50% { opacity: 0.3; }
+                100% { opacity: 0.7; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
