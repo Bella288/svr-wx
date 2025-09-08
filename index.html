@@ -442,6 +442,7 @@
         }
         
         // Process alerts and add to map
+        // Process alerts and add to map
         function processAlerts(alerts) {
             // Reset alert types
             alertTypes = {};
@@ -453,8 +454,9 @@
                 // Track this alert type
                 alertTypes[properties.event] = true;
                 
-                // Skip alerts without geometry and without UGC codes
-                if ((!geometry || geometry.type === 'Point') && (!properties.geocode || !properties.geocode.UGC)) {
+                // Skip alerts without any geometry information
+                if ((!geometry || geometry.type === 'Point') && 
+                    (!properties.geocode || !properties.geocode.UGC)) {
                     return;
                 }
                 
@@ -463,27 +465,28 @@
                 
                 let layer = null;
                 
-                // Handle polygon-based alerts
-                if (geometry && geometry.type === 'Polygon') {
-                    const coordinates = geometry.coordinates[0];
-                    const latLngs = coordinates.map(coord => [coord[1], coord[0]]);
-                    
-                    layer = L.polygon(latLngs, style)
-                        .addTo(map)
-                        .bindPopup(createPopupContent(properties));
+                // Handle polygon-based alerts (these have direct geometry)
+                if (geometry && (geometry.type === 'Polygon' || geometry.type === 'MultiPolygon')) {
+                    if (geometry.type === 'Polygon') {
+                        const coordinates = geometry.coordinates[0];
+                        const latLngs = coordinates.map(coord => [coord[1], coord[0]]);
+                        
+                        layer = L.polygon(latLngs, style)
+                            .addTo(map)
+                            .bindPopup(createPopupContent(properties));
+                    } 
+                    else if (geometry.type === 'MultiPolygon') {
+                        const polygons = geometry.coordinates.map(polygonCoords => {
+                            const latLngs = polygonCoords[0].map(coord => [coord[1], coord[0]]);
+                            return L.polygon(latLngs, style);
+                        });
+                        
+                        layer = L.featureGroup(polygons)
+                            .addTo(map)
+                            .bindPopup(createPopupContent(properties));
+                    }
                 } 
-                // Handle multipolygon alerts
-                else if (geometry && geometry.type === 'MultiPolygon') {
-                    const polygons = geometry.coordinates.map(polygonCoords => {
-                        const latLngs = polygonCoords[0].map(coord => [coord[1], coord[0]]);
-                        return L.polygon(latLngs, style);
-                    });
-                    
-                    layer = L.featureGroup(polygons)
-                        .addTo(map)
-                        .bindPopup(createPopupContent(properties));
-                }
-                // Handle county-based alerts (like watches)
+                // Handle county-based alerts (like watches) - these have UGC codes but no polygon geometry
                 else if (properties.geocode && properties.geocode.UGC && countyGeojson) {
                     const ugcCodes = properties.geocode.UGC;
                     
@@ -492,15 +495,18 @@
                     
                     // Find and add each county geometry
                     ugcCodes.forEach(ugcCode => {
-                        const countyGeometry = findCountyGeometry(ugcCode);
-                        if (countyGeometry) {
-                            const countyLayer = L.geoJSON(countyGeometry, {
-                                style: style,
-                                onEachFeature: function(feature, layer) {
-                                    layer.bindPopup(createPopupContent(properties));
-                                }
-                            });
-                            countyOutlines.push(countyLayer);
+                        // Only process county codes (format: SSCCCCC where C is county)
+                        if (ugcCode.length === 6) {
+                            const countyGeometry = findCountyGeometry(ugcCode);
+                            if (countyGeometry) {
+                                const countyLayer = L.geoJSON(countyGeometry, {
+                                    style: style,
+                                    onEachFeature: function(feature, layer) {
+                                        layer.bindPopup(createPopupContent(properties));
+                                    }
+                                });
+                                countyOutlines.push(countyLayer);
+                            }
                         }
                     });
                     
