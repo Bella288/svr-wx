@@ -548,9 +548,13 @@
             
             // Find the county feature in the GeoJSON
             const countyFeature = countyGeojson.features.find(feature => {
-                const id = feature.id;
-                // The id in the GeoJSON is in the format "STATE_COUNTY" (e.g., "01001")
-                return id && id.startsWith(stateCode) && id.endsWith(countyCode);
+                // The properties should contain state and county FIPS codes
+                const properties = feature.properties;
+                return properties && 
+                       properties.state && 
+                       properties.county && 
+                       properties.state === stateCode && 
+                       properties.county === countyCode;
             });
             
             return countyFeature;
