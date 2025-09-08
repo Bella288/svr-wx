@@ -6,21 +6,18 @@
     <title>Severe Weather Tracker</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
-        /* Your existing CSS remains the same */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
         body {
             display: flex;
             flex-direction: column;
             height: 100vh;
             background-color: #f0f2f5;
         }
-        
         header {
             background: linear-gradient(to right, #2c3e50, #4a6491);
             color: white;
@@ -30,29 +27,24 @@
             align-items: center;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
         }
-        
         .logo {
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
-        
         .logo i {
             font-size: 1.8rem;
         }
-        
         .address-form {
             display: flex;
             gap: 0.5rem;
         }
-        
         .address-input {
             padding: 0.5rem;
             border: none;
             border-radius: 4px;
             width: 250px;
         }
-        
         button {
             background-color: #3498db;
             color: white;
@@ -62,11 +54,9 @@
             cursor: pointer;
             transition: background-color 0.3s;
         }
-        
         button:hover {
             background-color: #2980b9;
         }
-        
         .alert-banner {
             background-color: #e74c3c;
             color: white;
@@ -77,28 +67,23 @@
             position: relative;
             z-index: 1000;
         }
-        
         .alert-banner.active {
             display: block;
             animation: pulse 2s infinite;
         }
-        
         @keyframes pulse {
             0% { opacity: 1; }
             50% { opacity: 0.8; }
             100% { opacity: 1; }
         }
-        
         .map-container {
             flex: 1;
             position: relative;
         }
-        
         #map {
             height: 100%;
             width: 100%;
         }
-        
         .info-panel {
             position: absolute;
             top: 1rem;
@@ -111,19 +96,16 @@
             max-width: 300px;
             display: none;
         }
-        
         .info-panel h3 {
             margin-bottom: 0.5rem;
             color: #2c3e50;
             border-bottom: 1px solid #eee;
             padding-bottom: 0.5rem;
         }
-        
         .info-panel p {
             margin: 0.3rem 0;
             color: #34495e;
         }
-        
         .legend {
             position: absolute;
             bottom: 1rem;
@@ -136,27 +118,23 @@
             max-height: 300px;
             overflow-y: auto;
         }
-        
         .legend h3 {
             margin-bottom: 0.5rem;
             color: #2c3e50;
             border-bottom: 1px solid #eee;
             padding-bottom: 0.5rem;
         }
-        
         .legend-item {
             display: flex;
             align-items: center;
             margin: 0.3rem 0;
         }
-        
         .legend-color {
             width: 20px;
             height: 20px;
             margin-right: 0.5rem;
             border-radius: 3px;
         }
-        
         .loading {
             position: absolute;
             top: 50%;
@@ -169,7 +147,6 @@
             z-index: 1000;
             display: none;
         }
-        
         .refresh-info {
             position: absolute;
             bottom: 1rem;
@@ -180,7 +157,6 @@
             font-size: 0.9rem;
             z-index: 1000;
         }
-        
         .filter-panel {
             position: absolute;
             top: 1rem;
@@ -192,18 +168,15 @@
             z-index: 1000;
             max-width: 200px;
         }
-        
         .filter-panel h3 {
             margin-bottom: 0.5rem;
             color: #2c3e50;
             border-bottom: 1px solid #eee;
             padding-bottom: 0.5rem;
         }
-        
         .filter-checkbox {
             margin: 0.3rem 0;
         }
-        
         .progress-bar {
             position: absolute;
             bottom: 3.5rem;
@@ -215,14 +188,12 @@
             overflow: hidden;
             z-index: 1000;
         }
-        
         .progress {
             height: 100%;
             background-color: #3498db;
             width: 0%;
             transition: width 0.3s;
         }
-        
         .api-status {
             position: absolute;
             bottom: 5rem;
@@ -232,6 +203,28 @@
             border-radius: 8px;
             font-size: 0.8rem;
             z-index: 1000;
+        }
+        .view-toggle {
+            position: absolute;
+            top: 1rem;
+            left: 16.5rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            z-index: 1001;
+            padding: 0.5rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .view-toggle label {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        .view-toggle select {
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            border: 1px solid #ccc;
         }
     </style>
 </head>
@@ -246,121 +239,83 @@
             <button id="save-address">Save Location</button>
         </div>
     </header>
-    
-    <div class="alert-banner" id="alert-banner">
-        <!-- Alert content will be inserted here -->
-    </div>
-    
+    <div class="alert-banner" id="alert-banner"></div>
     <div class="map-container">
         <div id="map"></div>
-        
-        <div class="info-panel" id="info-panel">
-            <!-- Alert details will be inserted here -->
-        </div>
-        
+        <div class="info-panel" id="info-panel"></div>
         <div class="filter-panel">
             <h3>Filter Alerts</h3>
-            <div id="alert-filters">
-                <!-- Filters will be added dynamically -->
-            </div>
+            <div id="alert-filters"></div>
         </div>
-        
+        <div class="view-toggle">
+            <label for="view-mode">View Mode:</label>
+            <select id="view-mode">
+                <option value="polygon" selected>Polygon</option>
+                <option value="county">Active County</option>
+            </select>
+        </div>
         <div class="legend">
             <h3>Legend</h3>
-            <div id="legend-items">
-                <!-- Legend items will be added dynamically -->
-            </div>
+            <div id="legend-items"></div>
         </div>
-        
         <div class="refresh-info">
             Data refreshes every minute. Last updated: <span id="last-updated">-</span>
         </div>
-        
         <div class="progress-bar">
             <div class="progress" id="progress-bar"></div>
         </div>
-        
         <div class="api-status" id="api-status">
             Geoapify requests today: <span id="geoapify-count">0</span>/3000
         </div>
-        
         <div class="loading" id="loading">
             Loading weather data...
         </div>
     </div>
-
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/topojson@3"></script>
     <script>
-        // Initialize the map
-        const map = L.map('map').setView([39.8283, -98.5795], 4); // Center on US
-        
-        // Add base tile layer
+        const map = L.map('map').setView([39.8283, -98.5795], 4);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
-        
-        // Store references to layers and markers
-        const alertLayers = {};
+
+        let alertLayers = {};
         let userMarker = null;
         let userLocation = null;
         let alertTypes = {};
-        let countyGeojson = null; // Store county boundaries
-        let zoneGeojson = null; // Store zone boundaries
+        let countyGeojson = null;
         let geoapifyRequestCount = 0;
-        
-        // NWS office areas to fetch data from
-        const nwsAreas = [
-            'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 
-            'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD', 
-            'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 
-            'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 
-            'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY',
-            'AS', 'GU', 'MP', 'PR', 'VI'
-        ];
-        
-        // Alert type styling configuration
+        let allAlerts = [];
+        let polygonMode = true;
+
         const alertStyles = {
-            // Tornado alerts
             'Tornado Warning': { color: '#ff0000', className: 'pulsing-layer' },
             'Tornado Watch': { color: '#ffcc00', dashArray: '10, 10', fillOpacity: 0.3 },
             'Tornado Emergency': { color: '#cc00ff', className: 'pulsing-layer' },
-            
-            // Flood alerts
+            'Flash Flood Warning': { color: '#880000', className: 'pulsing-layer' },
             'Flood Advisory': { color: '#ffff00', dashArray: '10, 10', fillOpacity: 0.3 },
             'Flood Watch': { color: '#aaff00', dashArray: '10, 10', fillOpacity: 0.3 },
             'Flood Warning': { color: '#007700', className: 'pulsing-layer' },
             'Coastal Flood Advisory': { color: '#77aaff', dashArray: '10, 10', fillOpacity: 0.3 },
             'Coastal Flood Warning': { color: '#0055ff', className: 'pulsing-layer' },
             'Coastal Flood Statement': { color: '#aaccff', dashArray: '5, 5', fillOpacity: 0.2 },
-            
-            // Thunderstorm alerts
             'Severe Thunderstorm Warning': { color: '#ff0000', dashArray: '10, 10', className: 'pulsing-layer' },
             'Severe Thunderstorm Watch': { color: '#ffcc00', fillOpacity: 0.3 },
             'Special Weather Statement': { color: '#cccccc', dashArray: '5, 5', fillOpacity: 0.2 },
-            
-            // Winter weather alerts
             'Winter Storm Warning': { color: '#00aaff', className: 'pulsing-layer' },
             'Winter Storm Watch': { color: '#00ccff', dashArray: '10, 10', fillOpacity: 0.3 },
             'Winter Weather Advisory': { color: '#00ffff', dashArray: '5, 5', fillOpacity: 0.3 },
             'Blizzard Warning': { color: '#ffffff', className: 'pulsing-layer' },
-            
-            // Wind alerts
             'Wind Advisory': { color: '#ffaa00', dashArray: '5, 5', fillOpacity: 0.3 },
             'High Wind Warning': { color: '#ff7700', className: 'pulsing-layer' },
             'Gale Warning': { color: '#0077ff', dashArray: '10, 10', fillOpacity: 0.3 },
             'Gale Watch': { color: '#0055cc', dashArray: '10, 10', fillOpacity: 0.3 },
-            
-            // Marine alerts
             'Small Craft Advisory': { color: '#5555ff', dashArray: '5, 5', fillOpacity: 0.3 },
             'Marine Weather Statement': { color: '#aaaaff', dashArray: '5, 5', fillOpacity: 0.2 },
-            
-            // Tropical alerts
-            'Tropical Storm Warning': { color: '#ff00ff', className: 'pulsing-layer' },
-            'Tropical Storm Watch': { color: '#ff77ff', dashArray: '10, 10', fillOpacity: 0.3 },
+            'Tropical Storm Warning': { color: '#00ddcc', className: 'pulsing-layer' },
+            'Tropical Storm Watch': { color: '#00ffee', dashArray: '10, 10', fillOpacity: 0.3 },
             'Hurricane Warning': { color: '#ff0000', className: 'pulsing-layer' },
             'Hurricane Watch': { color: '#ff8888', dashArray: '10, 10', fillOpacity: 0.3 },
-            
-            // Other alerts
             'Heat Advisory': { color: '#ff5500', dashArray: '5, 5', fillOpacity: 0.3 },
             'Excessive Heat Warning': { color: '#ff0000', className: 'pulsing-layer' },
             'Dense Fog Advisory': { color: '#aaaaaa', dashArray: '5, 5', fillOpacity: 0.3 },
@@ -378,79 +333,46 @@
             'Snow Squall Warning': { color: '#ffffff', className: 'pulsing-layer' },
             'Extreme Wind Warning': { color: '#ff00ff', className: 'pulsing-layer' },
             'Special Marine Warning': { color: '#ff5555', className: 'pulsing-layer' },
-            
-            // Default for any other alert types
             '_default': { color: '#5555ff', fillOpacity: 0.3 }
         };
-        
-        // Check for saved address in localStorage
+
         document.addEventListener('DOMContentLoaded', function() {
             const savedAddress = localStorage.getItem('weatherTrackerAddress');
             if (savedAddress) {
                 document.getElementById('address-input').value = savedAddress;
                 geocodeAddress(savedAddress);
             }
-            
-            // Load county boundaries first
-            loadCountyBoundaries().then(() => {
-                // Load zone boundaries
-                loadZoneBoundaries().then(() => {
-                    // Then load initial weather data
-                    fetchWeatherData();
-                    
-                    // Set up interval to refresh data every minute
-                    setInterval(fetchWeatherData, 60000);
-                });
-            });
-            
-            // Set up event listener for save address button
             document.getElementById('save-address').addEventListener('click', saveAddress);
-            
-            // Load Geoapify request count from localStorage
             const savedCount = localStorage.getItem('geoapifyRequestCount');
             if (savedCount) {
                 geoapifyRequestCount = parseInt(savedCount);
                 document.getElementById('geoapify-count').textContent = geoapifyRequestCount;
             }
+            document.getElementById('view-mode').addEventListener('change', function() {
+                polygonMode = this.value === 'polygon';
+                renderAlerts();
+            });
+            loadCountyBoundaries().then(() => fetchWeatherData());
+            setInterval(fetchWeatherData, 60000);
         });
-        
-        // Load county boundaries from GeoJSON
+
         async function loadCountyBoundaries() {
             try {
                 const response = await fetch('https://cdn.jsdelivr.net/npm/us-atlas@3/counties-10m.json');
                 countyGeojson = await response.json();
-                console.log('County boundaries loaded successfully');
-                
-                // Create a lookup table for counties by FIPS code
                 window.countyLookup = {};
                 if (countyGeojson && countyGeojson.objects && countyGeojson.objects.counties) {
                     const counties = countyGeojson.objects.counties;
                     const countyFeatures = topojson.feature(countyGeojson, counties).features;
-                    
                     countyFeatures.forEach(feature => {
-                        if (feature.id) {
-                            window.countyLookup[feature.id] = feature;
-                        }
+                        if (feature.id) window.countyLookup[feature.id] = feature;
                     });
-                    console.log('County lookup table created with', Object.keys(window.countyLookup).length, 'counties');
                 }
             } catch (error) {
                 console.error('Error loading county boundaries:', error);
             }
         }
-        
-        // Load zone boundaries from NWS
-        async function loadZoneBoundaries() {
-            try {
-                // This is a simplified approach - in production, you'd want to use the actual NWS zone shapefiles
-                // For now, we'll use a placeholder approach that maps SAME codes to counties
-                console.log('Zone boundaries placeholder loaded');
-            } catch (error) {
-                console.error('Error loading zone boundaries:', error);
-            }
-        }
-        
-        // Save address to localStorage
+
         function saveAddress() {
             const address = document.getElementById('address-input').value;
             if (address.trim() !== '') {
@@ -458,36 +380,19 @@
                 geocodeAddress(address);
             }
         }
-        
-        // Geocode address to coordinates
+
         function geocodeAddress(address) {
             document.getElementById('loading').style.display = 'block';
-            
-            // Using Nominatim for geocoding (OpenStreetMap)
             fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`)
                 .then(response => response.json())
                 .then(data => {
                     if (data && data.length > 0) {
                         const lat = parseFloat(data[0].lat);
                         const lon = parseFloat(data[0].lon);
-                        
                         userLocation = { lat, lng: lon };
-                        
-                        // Update map view
                         map.setView([lat, lon], 9);
-                        
-                        // Remove existing user marker if any
-                        if (userMarker) {
-                            map.removeLayer(userMarker);
-                        }
-                        
-                        // Add marker for user location
-                        userMarker = L.marker([lat, lon])
-                            .addTo(map)
-                            .bindPopup('Your location')
-                            .openPopup();
-                            
-                        // Check if user is in any alert area
+                        if (userMarker) map.removeLayer(userMarker);
+                        userMarker = L.marker([lat, lon]).addTo(map).bindPopup('Your location').openPopup();
                         checkUserInAlertArea();
                     } else {
                         alert('Address not found. Please try a more specific address.');
@@ -501,135 +406,81 @@
                     document.getElementById('loading').style.display = 'none';
                 });
         }
-        
-        // Fetch weather data from NWS API by area
+
         function fetchWeatherData() {
             document.getElementById('loading').style.display = 'block';
-            
-            // Clear existing alert layers
-            for (const id in alertLayers) {
-                map.removeLayer(alertLayers[id]);
-            }
-            Object.keys(alertLayers).forEach(key => delete alertLayers[key]);
-            
-            // Reset alert types
+            Object.keys(alertLayers).forEach(id => {
+                try { map.removeLayer(alertLayers[id]); } catch {}
+            });
+            alertLayers = {};
             alertTypes = {};
-            
-            // Update progress bar
-            const progressBar = document.getElementById('progress-bar');
-            progressBar.style.width = '0%';
-            
-            // Process each NWS area sequentially
-            processNwsAreasSequentially(0);
-        }
-        
-        // Process NWS areas sequentially
-        function processNwsAreasSequentially(index) {
-            if (index >= nwsAreas.length) {
-                // All areas processed
-                document.getElementById('loading').style.display = 'none';
-                
-                // Update filters and legend
-                updateFiltersAndLegend();
-                
-                // Check if user is in any alert area
-                if (userLocation) {
-                    checkUserInAlertArea();
-                }
-                
-                return;
-            }
-            
-            const area = nwsAreas[index];
-            
-            // Fetch alerts for this area
-            fetch(`https://api.weather.gov/alerts/active?area=${area}`)
-                .then(response => response.json())
+            allAlerts = [];
+            document.getElementById('progress-bar').style.width = '0%';
+
+            fetch('https://api.weather.gov/alerts/active')
+                .then(r => r.json())
                 .then(data => {
-                    // Process alerts for this area
-                    if (data.features && data.features.length > 0) {
-                        processAlertsSequentially(data.features, 0, () => {
-                            // Update progress
-                            const progressPercent = ((index + 1) / nwsAreas.length) * 100;
-                            document.getElementById('progress-bar').style.width = `${progressPercent}%`;
-                            
-                            // Process next area
-                            setTimeout(() => processNwsAreasSequentially(index + 1), 100);
-                        });
-                    } else {
-                        // No alerts in this area, process next area
-                        const progressPercent = ((index + 1) / nwsAreas.length) * 100;
-                        document.getElementById('progress-bar').style.width = `${progressPercent}%`;
-                        
-                        setTimeout(() => processNwsAreasSequentially(index + 1), 100);
+                    allAlerts = (data.features || []);
+                    if (!allAlerts.length) {
+                        document.getElementById('loading').style.display = 'none';
+                        return;
                     }
+                    renderAlerts();
+                    document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
+                    document.getElementById('progress-bar').style.width = '100%';
+                    document.getElementById('loading').style.display = 'none';
                 })
-                .catch(error => {
-                    console.error(`Error fetching weather data for area ${area}:`, error);
-                    // Continue with next area even if this one fails
-                    setTimeout(() => processNwsAreasSequentially(index + 1), 100);
+                .catch(e => {
+                    console.error('NWS fetch failed:', e);
+                    document.getElementById('loading').style.display = 'none';
                 });
         }
-        
-        // Process alerts sequentially with a small delay between each
-        function processAlertsSequentially(alerts, index, callback) {
-            if (index >= alerts.length) {
-                // All alerts processed
-                callback();
-                return;
-            }
-            
-            const alert = alerts[index];
-            processSingleAlert(alert);
-            
-            // Process next alert with a small delay to prevent UI freezing
-            setTimeout(() => processAlertsSequentially(alerts, index + 1, callback), 10);
+
+        function renderAlerts() {
+            Object.keys(alertLayers).forEach(id => {
+                try { map.removeLayer(alertLayers[id]); } catch {}
+            });
+            alertLayers = {};
+            alertTypes = {};
+            allAlerts.forEach(alert => {
+                const event = alert.properties.event;
+                alertTypes[event] = true;
+            });
+            updateFiltersAndLegend();
+            allAlerts.forEach(alert => {
+                processAlertForView(alert);
+            });
+            if (userLocation) checkUserInAlertArea();
         }
-        
-        // Process a single alert
-        function processSingleAlert(alert) {
+
+        function processAlertForView(alert) {
             const properties = alert.properties;
             const geometry = alert.geometry;
-            
-            // Track this alert type
-            alertTypes[properties.event] = true;
-            
-            // Determine the style based on alert type
+            const eventType = properties.event;
             const style = getAlertStyle(properties);
-            
+
             let layer = null;
-            
-            // Handle polygon-based alerts (these have direct geometry)
-            if (geometry && (geometry.type === 'Polygon' || geometry.type === 'MultiPolygon')) {
+            let show = true;
+            const filterCheckbox = document.getElementById('filter-' + eventType.replace(/\s+/g, '-'));
+            if (filterCheckbox && !filterCheckbox.checked) show = false;
+
+            if (polygonMode && geometry && (geometry.type === 'Polygon' || geometry.type === 'MultiPolygon')) {
                 if (geometry.type === 'Polygon') {
                     const coordinates = geometry.coordinates[0];
                     const latLngs = coordinates.map(coord => [coord[1], coord[0]]);
-                    
                     layer = L.polygon(latLngs, style)
-                        .addTo(map)
-                        .bindPopup(createPopupContent(properties));
-                } 
-                else if (geometry.type === 'MultiPolygon') {
+                            .bindPopup(createPopupContent(properties));
+                } else if (geometry.type === 'MultiPolygon') {
                     const polygons = geometry.coordinates.map(polygonCoords => {
                         const latLngs = polygonCoords[0].map(coord => [coord[1], coord[0]]);
                         return L.polygon(latLngs, style);
                     });
-                    
-                    layer = L.featureGroup(polygons)
-                        .addTo(map)
-                        .bindPopup(createPopupContent(properties));
+                    layer = L.featureGroup(polygons).bindPopup(createPopupContent(properties));
                 }
-            } 
-            // Handle county-based alerts (like watches) - these have UGC codes but no polygon geometry
-            else if (properties.geocode && properties.geocode.UGC && window.countyLookup) {
+            } else if (!polygonMode && properties.geocode && properties.geocode.UGC && window.countyLookup) {
                 const ugcCodes = properties.geocode.UGC;
-                
-                // Create a feature group for all county outlines
                 const countyOutlines = [];
-                
-                // Find and add each county geometry
                 ugcCodes.forEach(ugcCode => {
-                    // Only process county codes (format: SSCCCCC where C is county)
                     if (ugcCode.length === 6) {
                         const countyGeometry = findCountyGeometry(ugcCode);
                         if (countyGeometry) {
@@ -643,98 +494,15 @@
                         }
                     }
                 });
-                
-                if (countyOutlines.length > 0) {
-                    layer = L.featureGroup(countyOutlines).addTo(map);
-                }
+                if (countyOutlines.length > 0) layer = L.featureGroup(countyOutlines);
             }
-            // Handle zone-based alerts (these have SAME codes mapping to counties)
-            else if (properties.geocode && properties.geocode.SAME && window.countyLookup) {
-                const sameCodes = properties.geocode.SAME;
-                
-                // Create a feature group for all county outlines
-                const countyOutlines = [];
-                
-                // Find and add each county geometry
-                sameCodes.forEach(sameCode => {
-                    // SAME codes are 6 digits: SSCCCC (State, County)
-                    if (sameCode.length === 6) {
-                        // Convert to FIPS code (remove leading zero if present)
-                        const stateCode = sameCode.substring(0, 2);
-                        const countyCode = sameCode.substring(2);
-                        const fipsCode = (parseInt(stateCode) + countyCode).toString();
-                        
-                        const countyGeometry = window.countyLookup[fipsCode];
-                        if (countyGeometry) {
-                            const countyLayer = L.geoJSON(countyGeometry, {
-                                style: style,
-                                onEachFeature: function(feature, layer) {
-                                    layer.bindPopup(createPopupContent(properties));
-                                }
-                            });
-                            countyOutlines.push(countyLayer);
-                        }
-                    }
-                });
-                
-                if (countyOutlines.length > 0) {
-                    layer = L.featureGroup(countyOutlines).addTo(map);
-                }
-            }
-            // Handle alerts with city names but no geometry - use Geoapify API
-            else if (properties.areaDesc && geoapifyRequestCount < 3000) {
-                // Extract city and state from area description
-                const areaParts = properties.areaDesc.split(';');
-                if (areaParts.length > 0) {
-                    const firstArea = areaParts[0].trim();
-                    
-                    // Use Geoapify API to get coordinates for the city
-                    fetch(`https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(firstArea)}&format=json&apiKey=d675c363ff5742b4bdcf13904de7e954`)
-                        .then(response => response.json())
-                        .then(result => {
-                            if (result.results && result.results.length > 0) {
-                                const bbox = result.results[0].bbox;
-                                
-                                // Create a polygon from the bounding box
-                                const latLngs = [
-                                    [bbox.lat1, bbox.lon1], // NW corner
-                                    [bbox.lat1, bbox.lon2], // NE corner
-                                    [bbox.lat2, bbox.lon2], // SE corner
-                                    [bbox.lat2, bbox.lon1]  // SW corner
-                                ];
-                                
-                                layer = L.polygon(latLngs, style)
-                                    .addTo(map)
-                                    .bindPopup(createPopupContent(properties));
-                                
-                                // Add event listeners for hover
-                                addLayerEventListeners(layer, properties);
-                                
-                                // Store reference to layer
-                                alertLayers[properties.id] = layer;
-                            }
-                            
-                            // Update Geoapify request count
-                            geoapifyRequestCount++;
-                            document.getElementById('geoapify-count').textContent = geoapifyRequestCount;
-                            localStorage.setItem('geoapifyRequestCount', geoapifyRequestCount);
-                        })
-                        .catch(error => {
-                            console.error('Error fetching Geoapify data:', error);
-                        });
-                }
-            }
-            
-            // Add event listeners for hover if layer was created synchronously
-            if (layer) {
+            if (layer && show) {
                 addLayerEventListeners(layer, properties);
-                
-                // Store reference to layer
                 alertLayers[properties.id] = layer;
+                layer.addTo(map);
             }
         }
-        
-        // Add event listeners to a layer
+
         function addLayerEventListeners(layer, properties) {
             layer.on('mouseover', function(e) {
                 if (e.layer && e.layer.getLatLng) {
@@ -743,41 +511,26 @@
                     showInfoPanel(properties, e.latlng);
                 }
             });
-            
             layer.on('mouseout', function() {
                 hideInfoPanel();
             });
         }
-        
-        // Find county geometry by UGC code
+
         function findCountyGeometry(ugcCode) {
             if (!ugcCode || !window.countyLookup) return null;
-            
-            // UGC format: SSCCCCC (State, County)
             const stateCode = ugcCode.substring(0, 2);
             const countyCode = ugcCode.substring(2);
-            
-            // Create FIPS code (state + county)
             const fipsCode = stateCode + countyCode;
-            
-            // Find the county feature in the lookup table
             return window.countyLookup[fipsCode] || null;
         }
-        
-        // Update filters and legend based on active alert types
+
         function updateFiltersAndLegend() {
             const filtersContainer = document.getElementById('alert-filters');
             const legendContainer = document.getElementById('legend-items');
-            
-            // Clear existing filters and legend
             filtersContainer.innerHTML = '';
             legendContainer.innerHTML = '';
-            
-            // Add filters and legend items for each alert type
             Object.keys(alertTypes).sort().forEach(alertType => {
                 const style = getAlertStyle({ event: alertType });
-                
-                // Create filter checkbox
                 const filterDiv = document.createElement('div');
                 filterDiv.className = 'filter-checkbox';
                 filterDiv.innerHTML = `
@@ -786,8 +539,6 @@
                     <label for="filter-${alertType.replace(/\s+/g, '-')}">${alertType}</label>
                 `;
                 filtersContainer.appendChild(filterDiv);
-                
-                // Create legend item
                 const legendItem = document.createElement('div');
                 legendItem.className = 'legend-item';
                 legendItem.innerHTML = `
@@ -798,30 +549,14 @@
                 legendContainer.appendChild(legendItem);
             });
         }
-        
-        // Toggle visibility of an alert type
-        function toggleAlertType(alertType) {
-            for (const id in alertLayers) {
-                const layer = alertLayers[id];
-                // We'd need to store alert type with each layer to implement this properly
-                // This is a simplified implementation
-                if (layer._popup && layer._popup._content && layer._popup._content.includes(alertType)) {
-                    if (map.hasLayer(layer)) {
-                        map.removeLayer(layer);
-                    } else {
-                        map.addLayer(layer);
-                    }
-                }
-            }
+
+        window.toggleAlertType = function(alertType) {
+            renderAlerts();
         }
-        
-        // Get style for alert type
+
         function getAlertStyle(properties) {
             const eventType = properties.event;
-            
-            // Return the style for this event type or default
             const styleConfig = alertStyles[eventType] || alertStyles['_default'];
-            
             return {
                 color: styleConfig.color,
                 weight: 3,
@@ -832,8 +567,7 @@
                 className: styleConfig.className
             };
         }
-        
-        // Create popup content for alerts
+
         function createPopupContent(properties) {
             return `
                 <div>
@@ -847,8 +581,7 @@
                 </div>
             `;
         }
-        
-        // Show info panel on hover
+
         function showInfoPanel(properties, latlng) {
             const infoPanel = document.getElementById('info-panel');
             infoPanel.innerHTML = `
@@ -859,48 +592,35 @@
                 <p><strong>Expires:</strong> ${new Date(properties.expires).toLocaleString()}</p>
                 <p>${properties.headline || properties.description.substring(0, 100)}...</p>
             `;
-            
-            // Position the panel near the mouse
             const point = map.latLngToContainerPoint(latlng);
             infoPanel.style.left = (point.x + 10) + 'px';
             infoPanel.style.top = (point.y + 10) + 'px';
             infoPanel.style.display = 'block';
         }
-        
-        // Hide info panel
+
         function hideInfoPanel() {
             document.getElementById('info-panel').style.display = 'none';
         }
-        
-        // Check if user is in any alert area
+
         function checkUserInAlertArea() {
             if (!userLocation || typeof userLocation.lat !== 'number' || typeof userLocation.lng !== 'number') {
                 console.error('Invalid user location:', userLocation);
                 return;
             }
-            
             const banner = document.getElementById('alert-banner');
             let userInAlert = false;
             let highestSeverityAlert = null;
-            
-            // Check each alert to see if user is inside
             for (const id in alertLayers) {
                 const layer = alertLayers[id];
-                
-                // For polygon layers
                 if (layer && (layer instanceof L.Polygon || layer instanceof L.FeatureGroup)) {
                     try {
                         if (layer.getBounds().contains([userLocation.lat, userLocation.lng])) {
                             userInAlert = true;
-                            
-                            // Get the alert properties from the popup content
                             const popupContent = layer.getPopup().getContent();
                             const parser = new DOMParser();
                             const doc = parser.parseFromString(popupContent, 'text/html');
                             const eventType = doc.querySelector('h3').textContent;
                             const severity = doc.querySelector('p:nth-child(3)').textContent.replace('Severity: ', '');
-                            
-                            // Prioritize higher severity alerts
                             if (!highestSeverityAlert) {
                                 highestSeverityAlert = {id, eventType, severity};
                             } else if (severity === 'Extreme' && highestSeverityAlert.severity !== 'Extreme') {
@@ -915,8 +635,6 @@
                     }
                 }
             }
-            
-            // Show banner if user is in an alert area
             if (userInAlert && highestSeverityAlert) {
                 const alert = highestSeverityAlert;
                 banner.innerHTML = `
@@ -928,25 +646,20 @@
                 banner.classList.remove('active');
             }
         }
-        
-        // Focus on a specific alert
-        function focusOnAlert(alertId) {
+
+        window.focusOnAlert = function(alertId) {
             const layer = alertLayers[alertId];
             if (layer) {
-                if (layer.getBounds) {
-                    map.fitBounds(layer.getBounds());
-                }
+                if (layer.getBounds) map.fitBounds(layer.getBounds());
                 layer.openPopup();
             }
         }
-        
-        // Add CSS for pulsing animation
+
         const style = document.createElement('style');
         style.textContent = `
             .pulsing-layer {
                 animation: pulse-animation 2s infinite;
             }
-            
             @keyframes pulse-animation {
                 0% { opacity: 0.7; }
                 50% { opacity: 0.3; }
@@ -955,6 +668,5 @@
         `;
         document.head.appendChild(style);
     </script>
-    <script src="https://unpkg.com/topojson@3"></script>
 </body>
 </html>
