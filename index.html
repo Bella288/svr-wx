@@ -222,6 +222,17 @@
             width: 0%;
             transition: width 0.3s;
         }
+        
+        .api-status {
+            position: absolute;
+            bottom: 5rem;
+            left: 1rem;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            z-index: 1000;
+        }
     </style>
 </head>
 <body>
@@ -269,6 +280,10 @@
             <div class="progress" id="progress-bar"></div>
         </div>
         
+        <div class="api-status" id="api-status">
+            Geoapify requests today: <span id="geoapify-count">0</span>/3000
+        </div>
+        
         <div class="loading" id="loading">
             Loading weather data...
         </div>
@@ -291,6 +306,17 @@
         let alertTypes = {};
         let countyGeojson = null; // Store county boundaries
         let zoneGeojson = null; // Store zone boundaries
+        let geoapifyRequestCount = 0;
+        
+        // NWS office areas to fetch data from
+        const nwsAreas = [
+            'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 
+            'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD', 
+            'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 
+            'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 
+            'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY',
+            'AS', 'GU', 'MP', 'PR', 'VI'
+        ];
         
         // Alert type styling configuration
         const alertStyles = {
@@ -346,7 +372,7 @@
             'Frost Advisory': { color: '#ccffff', dashArray: '5, 5', fillOpacity: 0.3 },
             'Freeze Warning': { color: '#00ffff', className: 'pulsing-layer' },
             'Freeze Watch': { color: '#00cccc', dashArray: '10, 10', fillOpacity: 0.3 },
-            'Ashfall Advisory': { color: '#888888', dashArray: '5, 5', fillOpacity: 0.3 },
+            'Ashfall Advisory': { color: '#888888', dashArray: '5, 5', fillOpacity: 极速3 },
             'Dust Storm Warning': { color: '#ccaa00', className: 'pulsing-layer' },
             'Dust Storm Advisory': { color: '#ccbb77', dashArray: '5, 5', fillOpacity: 0.3 },
             'Snow Squall Warning': { color: '#ffffff', className: 'pulsing-layer' },
@@ -379,6 +405,13 @@
             
             // Set up event listener for save address button
             document.getElementById('save-address').addEventListener('click', saveAddress);
+            
+            // Load Geoapify request count from localStorage
+            const savedCount = localStorage.getItem('geoapifyRequestCount');
+            if (savedCount) {
+                geoapifyRequestCount = parseInt(savedCount);
+                document.getElementById('geoapify-count').textContent = geoapifyRequestCount;
+            }
         });
         
         // Load county boundaries from GeoJSON
@@ -469,7 +502,7 @@
                 });
         }
         
-        // Fetch weather data from NWS API
+        // Fetch weather data from NWS API by area
         function fetchWeatherData() {
             document.getElementById('loading').style.display = 'block';
             
@@ -482,61 +515,75 @@
             // Reset alert types
             alertTypes = {};
             
-            // Fetch active alerts
-            fetch('https://api.weather.gov/alerts/active')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
-                    
-                    // Process alerts one at a time with a delay to prevent UI freezing
-                    processAlertsSequentially(data.features);
-                })
-                .catch(error => {
-                    console.error('Error fetching weather data:', error);
-                    document.getElementById('loading').style.display = 'none';
-                });
-        }
-        
-        // Process alerts sequentially with a small delay between each
-        function processAlertsSequentially(alerts) {
-            const totalAlerts = alerts.length;
-            let processedCount = 0;
-            
             // Update progress bar
             const progressBar = document.getElementById('progress-bar');
             progressBar.style.width = '0%';
             
-            // Function to process next alert
-            function processNextAlert() {
-                if (processedCount >= totalAlerts) {
-                    // All alerts processed
-                    document.getElementById('loading').style.display = 'none';
-                    
-                    // Update filters and legend
-                    updateFiltersAndLegend();
-                    
-                    // Check if user is in any alert area
-                    if (userLocation) {
-                        checkUserInAlertArea();
-                    }
-                    
-                    return;
+            // Process each NWS area sequentially
+            processNwsAreasSequentially(0);
+        }
+        
+        // Process NWS areas sequentially
+        function processNwsAreasSequentially(index) {
+            if (index >= nwsAreas.length) {
+                // All areas processed
+                document.getElementById('loading').style.display = 'none';
+                
+                // Update filters and legend
+                updateFiltersAndLegend();
+                
+                // Check if user is in any alert area
+                if (userLocation) {
+                    checkUserInAlertArea();
                 }
                 
-                const alert = alerts[processedCount];
-                processSingleAlert(alert);
-                
-                // Update progress
-                processedCount++;
-                const progressPercent = (processedCount / totalAlerts) * 100;
-                progressBar.style.width = `${progressPercent}%`;
-                
-                // Process next alert with a small delay to prevent UI freezing
-                setTimeout(processNextAlert, 10);
+                return;
             }
             
-            // Start processing
-            processNextAlert();
+            const area = nwsAreas[index];
+            
+            // Fetch alerts for this area
+            fetch(`https://api.weather.gov/alerts/active?area=${area}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Process alerts for this area
+                    if (data.features && data.features.length > 0) {
+                        processAlertsSequentially(data.features, 0, () => {
+                            // Update progress
+                            const progressPercent = ((index + 1) / nwsAreas.length) * 100;
+                            document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+                            
+                            // Process next area
+                            setTimeout(() => processNwsAreasSequentially(index + 1), 100);
+                        });
+                    } else {
+                        // No alerts in this area, process next area
+                        const progressPercent = ((index + 1) / nwsAreas.length) * 100;
+                        document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+                        
+                        setTimeout(() => processNwsAreasSequentially(index + 1), 100);
+                    }
+                })
+                .catch(error => {
+                    console.error(`Error fetching weather data for area ${area}:`, error);
+                    // Continue with next area even if this one fails
+                    setTimeout(() => processNwsAreasSequentially(index + 1), 100);
+                });
+        }
+        
+        // Process alerts sequentially with a small delay between each
+        function processAlertsSequentially(alerts, index, callback) {
+            if (index >= alerts.length) {
+                // All alerts processed
+                callback();
+                return;
+            }
+            
+            const alert = alerts[index];
+            processSingleAlert(alert);
+            
+            // Process next alert with a small delay to prevent UI freezing
+            setTimeout(() => processAlertsSequentially(alerts, index + 1, callback), 10);
         }
         
         // Process a single alert
@@ -634,24 +681,72 @@
                     layer = L.featureGroup(countyOutlines).addTo(map);
                 }
             }
+            // Handle alerts with city names but no geometry - use Geoapify API
+            else if (properties.areaDesc && geoapifyRequestCount < 3000) {
+                // Extract city and state from area description
+                const areaParts = properties.areaDesc.split(';');
+                if (areaParts.length > 0) {
+                    const firstArea = areaParts[0].trim();
+                    
+                    // Use Geoapify API to get coordinates for the city
+                    fetch(`https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(firstArea)}&format=json&apiKey=d675c363ff5742b4bdcf13904de7e954`)
+                        .then(response => response.json())
+                        .then(result => {
+                            if (result.results && result.results.length > 0) {
+                                const bbox = result.results[0].bbox;
+                                
+                                // Create a polygon from the bounding box
+                                const latLngs = [
+                                    [bbox.lat1, bbox.lon1], // NW corner
+                                    [bbox.lat1, bbox.lon2], // NE corner
+                                    [bbox.lat2, bbox.lon2], // SE corner
+                                    [bbox.lat2, bbox.lon1]  // SW corner
+                                ];
+                                
+                                layer = L.polygon(latLngs, style)
+                                    .addTo(map)
+                                    .bindPopup(createPopupContent(properties));
+                                
+                                // Add event listeners for hover
+                                addLayerEventListeners(layer, properties);
+                                
+                                // Store reference to layer
+                                alertLayers[properties.id] = layer;
+                            }
+                            
+                            // Update Geoapify request count
+                            geoapifyRequestCount++;
+                            document.getElementById('geoapify-count').textContent = geoapifyRequestCount;
+                            localStorage.setItem('geoapifyRequestCount', geoapifyRequestCount);
+                        })
+                        .catch(error => {
+                            console.error('Error fetching Geoapify data:', error);
+                        });
+                }
+            }
             
-            // Add event listeners for hover
+            // Add event listeners for hover if layer was created synchronously
             if (layer) {
-                layer.on('mouseover', function(e) {
-                    if (e.layer && e.layer.getLatLng) {
-                        showInfoPanel(properties, e.layer.getLatLng());
-                    } else if (e.latlng) {
-                        showInfoPanel(properties, e.latlng);
-                    }
-                });
-                
-                layer.on('mouseout', function() {
-                    hideInfoPanel();
-                });
+                addLayerEventListeners(layer, properties);
                 
                 // Store reference to layer
                 alertLayers[properties.id] = layer;
             }
+        }
+        
+        // Add event listeners to a layer
+        function addLayerEventListeners(layer, properties) {
+            layer.on('mouseover', function(e) {
+                if (e.layer && e.layer.getLatLng) {
+                    showInfoPanel(properties, e.layer.getLatLng());
+                } else if (e.latlng) {
+                    showInfoPanel(properties, e.latlng);
+                }
+            });
+            
+            layer.on('mouseout', function() {
+                hideInfoPanel();
+            });
         }
         
         // Find county geometry by UGC code
