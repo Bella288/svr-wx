@@ -267,6 +267,7 @@
         let userLocation = null;
         let alertTypes = {};
         let countyGeojson = null; // Store county boundaries
+        let zoneGeojson = null; // Store zone boundaries
         
         // Alert type styling configuration
         const alertStyles = {
@@ -343,11 +344,14 @@
             
             // Load county boundaries first
             loadCountyBoundaries().then(() => {
-                // Then load initial weather data
-                fetchWeatherData();
-                
-                // Set up interval to refresh data every minute
-                setInterval(fetchWeatherData, 60000);
+                // Load zone boundaries
+                loadZoneBoundaries().then(() => {
+                    // Then load initial weather data
+                    fetchWeatherData();
+                    
+                    // Set up interval to refresh data every minute
+                    setInterval(fetchWeatherData, 60000);
+                });
             });
             
             // Set up event listener for save address button
@@ -376,6 +380,17 @@
                 }
             } catch (error) {
                 console.error('Error loading county boundaries:', error);
+            }
+        }
+        
+        // Load zone boundaries from NWS
+        async function loadZoneBoundaries() {
+            try {
+                // This is a simplified approach - in production, you'd want to use the actual NWS zone shapefiles
+                // For now, we'll use a placeholder approach that maps SAME codes to counties
+                console.log('Zone boundaries placeholder loaded');
+            } catch (error) {
+                console.error('Error loading zone boundaries:', error);
             }
         }
         
@@ -506,6 +521,39 @@
                         // Only process county codes (format: SSCCCCC where C is county)
                         if (ugcCode.length === 6) {
                             const countyGeometry = findCountyGeometry(ugcCode);
+                            if (countyGeometry) {
+                                const countyLayer = L.geoJSON(countyGeometry, {
+                                    style: style,
+                                    onEachFeature: function(feature, layer) {
+                                        layer.bindPopup(createPopupContent(properties));
+                                    }
+                                });
+                                countyOutlines.push(countyLayer);
+                            }
+                        }
+                    });
+                    
+                    if (countyOutlines.length > 0) {
+                        layer = L.featureGroup(countyOutlines).addTo(map);
+                    }
+                }
+                // Handle zone-based alerts (these have SAME codes mapping to counties)
+                else if (properties.geocode && properties.geocode.SAME && window.countyLookup) {
+                    const sameCodes = properties.geocode.SAME;
+                    
+                    // Create a feature group for all county outlines
+                    const countyOutlines = [];
+                    
+                    // Find and add each county geometry
+                    sameCodes.forEach(sameCode => {
+                        // SAME codes are 6 digits: SSCCCC (State, County)
+                        if (sameCode.length === 6) {
+                            // Convert to FIPS code (remove leading zero if present)
+                            const stateCode = sameCode.substring(0, 2);
+                            const countyCode = sameCode.substring(2);
+                            const fipsCode = (parseInt(stateCode) + countyCode).toString();
+                            
+                            const countyGeometry = window.countyLookup[fipsCode];
                             if (countyGeometry) {
                                 const countyLayer = L.geoJSON(countyGeometry, {
                                     style: style,
