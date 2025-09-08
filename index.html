@@ -6,255 +6,42 @@
     <title>Severe Weather Tracker</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        body {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            background-color: #f0f2f5;
-        }
-        header {
-            background: linear-gradient(to right, #2c3e50, #4a6491);
-            color: white;
-            padding: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-        }
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .logo i {
-            font-size: 1.8rem;
-        }
-        .address-form {
-            display: flex;
-            gap: 0.5rem;
-        }
-        .address-input {
-            padding: 0.5rem;
-            border: none;
-            border-radius: 4px;
-            width: 250px;
-        }
-        button {
-            background-color: #3498db;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #2980b9;
-        }
-        .alert-banner {
-            background-color: #e74c3c;
-            color: white;
-            padding: 0.8rem;
-            text-align: center;
-            display: none;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-            position: relative;
-            z-index: 1000;
-        }
-        .alert-banner.active {
-            display: block;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.8; }
-            100% { opacity: 1; }
-        }
-        .map-container {
-            flex: 1;
-            position: relative;
-        }
-        #map {
-            height: 100%;
-            width: 100%;
-            background: #e8e8e8;
-        }
-        .info-panel {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            background-color: white;
-            padding: 1rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-            z-index: 1000;
-            max-width: 300px;
-            display: none;
-        }
-        .info-panel h3 {
-            margin-bottom: 0.5rem;
-            color: #2c3e50;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 0.5rem;
-        }
-        .info-panel p {
-            margin: 0.3rem 0;
-            color: #34495e;
-        }
-        .legend {
-            position: absolute;
-            bottom: 1rem;
-            right: 1rem;
-            background-color: white;
-            padding: 1rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-            z-index: 1000;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        .legend h3 {
-            margin-bottom: 0.5rem;
-            color: #2c3e50;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 0.5rem;
-        }
-        .legend-item {
-            display: flex;
-            align-items: center;
-            margin: 0.3rem 0;
-        }
-        .legend-color {
-            width: 20px;
-            height: 20px;
-            margin-right: 0.5rem;
-            border-radius: 3px;
-            border: 1px solid #888;
-        }
-        .loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: rgba(255, 255, 255, 0.9);
-            padding: 1rem 2rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-            z-index: 1000;
-            display: none;
-        }
-        .refresh-info {
-            position: absolute;
-            bottom: 1rem;
-            left: 1rem;
-            background-color: rgba(255, 255, 255, 0.8);
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            z-index: 1000;
-        }
-        .filter-panel {
-            position: absolute;
-            top: 1rem;
-            left: 1rem;
-            background-color: white;
-            padding: 1rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-            z-index: 1000;
-            max-width: 200px;
-        }
-        .filter-panel h3 {
-            margin-bottom: 0.5rem;
-            color: #2c3e50;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 0.5rem;
-        }
-        .filter-checkbox {
-            margin: 0.3rem 0;
-        }
-        .progress-bar {
-            position: absolute;
-            bottom: 3.5rem;
-            left: 1rem;
-            width: 200px;
-            height: 10px;
-            background-color: #f0f0f0;
-            border-radius: 5px;
-            overflow: hidden;
-            z-index: 1000;
-        }
-        .progress {
-            height: 100%;
-            background-color: #3498db;
-            width: 0%;
-            transition: width 0.3s;
-        }
-        .api-status {
-            position: absolute;
-            bottom: 5rem;
-            left: 1rem;
-            background-color: rgba(255, 255, 255, 0.8);
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            z-index: 1000;
-        }
-        .view-toggle {
-            position: absolute;
-            top: 1rem;
-            left: 16.5rem;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-            z-index: 1001;
-            padding: 0.5rem 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .view-toggle label {
-            font-weight: 500;
-            color: #2c3e50;
-        }
-        .view-toggle select {
-            padding: 0.2rem 0.6rem;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-        }
-        .county-outline {
-            color: #222;
-            weight: 1.5;
-            fill: #fff;
-            fillOpacity: 0;
-            opacity: 0.7;
-            pointer-events: none;
-        }
-        .inactive-county {
-            fill: #fff;
-            fill-opacity: 0.7;
-            opacity: 0.6;
-            pointer-events: none;
-        }
-        .active-county {
-            fill-opacity: 0.7;
-            opacity: 1;
-            pointer-events: auto;
-        }
-        .marine-zone-outline {
-            color: #11b6e8;
-            weight: 1.3;
-            fill: #b6f1ff;
-            fill-opacity: 0.18;
-            opacity: 0.8;
-            pointer-events: none;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { display: flex; flex-direction: column; height: 100vh; background-color: #f0f2f5; }
+        header { background: linear-gradient(to right, #2c3e50, #4a6491); color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.2);}
+        .logo { display: flex; align-items: center; gap: 0.5rem; }
+        .logo i { font-size: 1.8rem; }
+        .address-form { display: flex; gap: 0.5rem; }
+        .address-input { padding: 0.5rem; border: none; border-radius: 4px; width: 250px; }
+        button { background-color: #3498db; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; transition: background-color 0.3s; }
+        button:hover { background-color: #2980b9; }
+        .alert-banner { background-color: #e74c3c; color: white; padding: 0.8rem; text-align: center; display: none; box-shadow: 0 2px 5px rgba(0,0,0,0.2); position: relative; z-index: 1000; }
+        .alert-banner.active { display: block; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% {opacity:1;} 50% {opacity:0.8;} 100% {opacity:1;} }
+        .map-container { flex: 1; position: relative; }
+        #map { height: 100%; width: 100%; background: #e8e8e8; }
+        .info-panel { position: absolute; top: 1rem; right: 1rem; background-color: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 1000; max-width: 300px; display: none; }
+        .info-panel h3 { margin-bottom: 0.5rem; color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }
+        .info-panel p { margin: 0.3rem 0; color: #34495e; }
+        .legend { position: absolute; bottom: 1rem; right: 1rem; background-color: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 1000; max-height: 300px; overflow-y: auto; }
+        .legend h3 { margin-bottom: 0.5rem; color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }
+        .legend-item { display: flex; align-items: center; margin: 0.3rem 0; }
+        .legend-color { width: 20px; height: 20px; margin-right: 0.5rem; border-radius: 3px; border: 1px solid #888; }
+        .loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: rgba(255,255,255,0.9); padding: 1rem 2rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 1000; display: none; }
+        .refresh-info { position: absolute; bottom: 1rem; left: 1rem; background-color: rgba(255,255,255,0.8); padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.9rem; z-index: 1000; }
+        .filter-panel { position: absolute; top: 1rem; left: 1rem; background-color: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 1000; max-width: 200px; }
+        .filter-panel h3 { margin-bottom: 0.5rem; color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }
+        .filter-checkbox { margin: 0.3rem 0; }
+        .progress-bar { position: absolute; bottom: 3.5rem; left: 1rem; width: 200px; height: 10px; background-color: #f0f0f0; border-radius: 5px; overflow: hidden; z-index: 1000; }
+        .progress { height: 100%; background-color: #3498db; width: 0%; transition: width 0.3s; }
+        .api-status { position: absolute; bottom: 5rem; left: 1rem; background-color: rgba(255,255,255,0.8); padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.8rem; z-index: 1000; }
+        .view-toggle { position: absolute; top: 1rem; left: 16.5rem; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.15); z-index: 1001; padding: 0.5rem 1rem; display: flex; align-items: center; gap: 0.5rem; }
+        .view-toggle label { font-weight: 500; color: #2c3e50; }
+        .view-toggle select { padding: 0.2rem 0.6rem; border-radius: 4px; border: 1px solid #ccc; }
+        .county-outline { color: #222; weight: 1.5; fill: #fff; fillOpacity: 0; opacity: 0.7; pointer-events: none; }
+        .inactive-county { fill: #fff; fill-opacity: 0.7; opacity: 0.6; pointer-events: none; }
+        .active-county { fill-opacity: 0.7; opacity: 1; pointer-events: auto; }
+        .marine-zone-outline { color: #11b6e8; weight: 1.3; fill: #b6f1ff; fill-opacity: 0.18; opacity: 0.8; pointer-events: none; }
     </style>
 </head>
 <body>
@@ -314,12 +101,16 @@
         let alertTypes = {};
         let countyGeojson = null;
         let countyFeatureCollection = null;
+        let cwaGeojson = null;
+        let cwaFeatureCollection = null;
+        let marineZonesGeojson = null;
+        let marineZonesFeatureCollection = null;
         let geoapifyRequestCount = 0;
         let allAlerts = [];
         let polygonMode = true;
         let countyOutlinesLayer = null;
         let marineZonesLayer = null;
-        let marineZonesGeoJSON = null;
+        let cwaLayer = null;
         let countyActiveLayer = null;
 
         const alertStyles = {
@@ -370,6 +161,10 @@
             '_default': { color: '#5555ff', fillOpacity: 0.3, severityRank: 99 }
         };
 
+        let marineZoneLookup = {};
+        let cwaLookup = {};
+        let countyLookup = {};
+
         function getAlertStyle(properties) {
             const eventType = properties.event;
             const styleConfig = alertStyles[eventType] || alertStyles['_default'];
@@ -403,7 +198,8 @@
             });
             Promise.all([
                 loadCountyBoundaries(),
-                loadMarineZones()
+                loadMarineZones(),
+                loadCWABoundaries()
             ]).then(() => fetchWeatherData());
             setInterval(fetchWeatherData, 60000);
         });
@@ -412,7 +208,7 @@
             try {
                 const response = await fetch('https://cdn.jsdelivr.net/npm/us-atlas@3/counties-10m.json');
                 countyGeojson = await response.json();
-                window.countyLookup = {};
+                countyLookup = {};
                 if (countyGeojson && countyGeojson.objects && countyGeojson.objects.counties) {
                     const counties = countyGeojson.objects.counties;
                     const countyFeatures = topojson.feature(countyGeojson, counties).features;
@@ -421,7 +217,7 @@
                         features: countyFeatures
                     };
                     countyFeatures.forEach(feature => {
-                        if (feature.id) window.countyLookup[feature.id] = feature;
+                        if (feature.id) countyLookup[feature.id] = feature;
                     });
                 }
             } catch (error) {
@@ -431,9 +227,46 @@
 
         async function loadMarineZones() {
             try {
-                marineZonesGeoJSON = { type: "FeatureCollection", features: [] };
+                // NOAA marine zones GeoJSON: https://mapservices.weather.noaa.gov/vector/rest/services/Marine/MapServer/2/query?where=1=1&outFields=*&outSR=4326&f=geojson
+                // But let's use the static version for reliability:
+                const url = 'https://raw.githubusercontent.com/Bella288/svr-wx-data/main/marine_zones_us.geojson';
+                const resp = await fetch(url);
+                marineZonesGeojson = await resp.json();
+                marineZonesFeatureCollection = marineZonesGeojson;
+                marineZoneLookup = {};
+                if (marineZonesFeatureCollection && marineZonesFeatureCollection.features) {
+                    marineZonesFeatureCollection.features.forEach(f => {
+                        if (f.properties && f.properties.ZONE) {
+                            marineZoneLookup[f.properties.ZONE] = f;
+                        }
+                    });
+                }
             } catch (error) {
+                marineZonesGeojson = { type: "FeatureCollection", features: [] };
+                marineZoneLookup = {};
                 console.error('Error loading marine zones:', error);
+            }
+        }
+
+        async function loadCWABoundaries() {
+            try {
+                // NOAA CWA (forecast office) boundaries static GeoJSON
+                const url = 'https://raw.githubusercontent.com/Bella288/svr-wx-data/main/nws_cwa.geojson';
+                const resp = await fetch(url);
+                cwaGeojson = await resp.json();
+                cwaFeatureCollection = cwaGeojson;
+                cwaLookup = {};
+                if (cwaFeatureCollection && cwaFeatureCollection.features) {
+                    cwaFeatureCollection.features.forEach(f => {
+                        if (f.properties && f.properties.CWA) {
+                            cwaLookup[f.properties.CWA] = f;
+                        }
+                    });
+                }
+            } catch (error) {
+                cwaGeojson = { type: "FeatureCollection", features: [] };
+                cwaLookup = {};
+                console.error('Error loading CWA boundaries:', error);
             }
         }
 
@@ -568,12 +401,31 @@
                         });
                         layer = L.featureGroup(polygons).bindPopup(createPopupContent(properties));
                     }
-                } else if (!geometry && properties.geocode && properties.geocode.UGC && window.countyLookup && countyFeatureCollection) {
-                    const ugcCodes = properties.geocode.UGC;
-                    const polygons = [];
-                    ugcCodes.forEach(ugcCode => {
-                        if (ugcCode.length === 6) {
-                            const countyGeometry = findCountyGeometry(ugcCode);
+                } else {
+                    let polygons = [];
+                    // Try counties (UGC and FIPS)
+                    if (properties.geocode && properties.geocode.UGC && countyLookup && countyFeatureCollection) {
+                        properties.geocode.UGC.forEach(ugcCode => {
+                            if (ugcCode.length === 6) {
+                                const stateCode = ugcCode.substring(0, 2);
+                                const countyCode = ugcCode.substring(2);
+                                const fipsCode = stateCode + countyCode;
+                                const countyGeometry = countyLookup[fipsCode];
+                                if (countyGeometry) {
+                                    const countyLayer = L.geoJSON(countyGeometry, {
+                                        style: style,
+                                        onEachFeature: function(feature, layer) {
+                                            layer.bindPopup(createPopupContent(properties));
+                                        }
+                                    });
+                                    polygons.push(countyLayer);
+                                }
+                            }
+                        });
+                    }
+                    if (properties.geocode && properties.geocode.FIPS && countyFeatureCollection) {
+                        properties.geocode.FIPS.forEach(fipsCode => {
+                            const countyGeometry = countyLookup[fipsCode];
                             if (countyGeometry) {
                                 const countyLayer = L.geoJSON(countyGeometry, {
                                     style: style,
@@ -583,27 +435,52 @@
                                 });
                                 polygons.push(countyLayer);
                             }
-                        }
-                    });
-                    if (polygons.length > 0) {
-                        layer = L.featureGroup(polygons);
+                        });
                     }
-                } else if (!geometry && properties.geocode && properties.geocode.FIPS && countyFeatureCollection) {
-                    // fallback: use forecast area outline (by FIPS code) as polygon
-                    const fipsCodes = properties.geocode.FIPS;
-                    const polygons = [];
-                    fipsCodes.forEach(fipsCode => {
-                        const countyGeometry = window.countyLookup && window.countyLookup[fipsCode];
-                        if (countyGeometry) {
-                            const countyLayer = L.geoJSON(countyGeometry, {
-                                style: style,
-                                onEachFeature: function(feature, layer) {
-                                    layer.bindPopup(createPopupContent(properties));
-                                }
-                            });
-                            polygons.push(countyLayer);
-                        }
-                    });
+                    // Try marine zones
+                    if (properties.geocode && properties.geocode.MARINE && marineZoneLookup && marineZonesFeatureCollection) {
+                        properties.geocode.MARINE.forEach(zoneCode => {
+                            const marineFeat = marineZoneLookup[zoneCode];
+                            if (marineFeat) {
+                                const marineLayer = L.geoJSON(marineFeat, {
+                                    style: {
+                                        color: "#11b6e8",
+                                        weight: 2,
+                                        fillColor: "#b6f1ff",
+                                        fillOpacity: 0.18,
+                                        opacity: 0.8,
+                                        className: "marine-zone-outline"
+                                    },
+                                    onEachFeature: function(feature, l) {
+                                        l.bindPopup(createPopupContent(properties));
+                                    }
+                                });
+                                polygons.push(marineLayer);
+                            }
+                        });
+                    }
+                    // Try CWA/issuing area
+                    if (properties.geocode && properties.geocode.CWA && cwaLookup && cwaFeatureCollection) {
+                        properties.geocode.CWA.forEach(cwaCode => {
+                            const cwaFeat = cwaLookup[cwaCode];
+                            if (cwaFeat) {
+                                const cwaLayer = L.geoJSON(cwaFeat, {
+                                    style: {
+                                        color: "#222",
+                                        weight: 2,
+                                        fillColor: style.color,
+                                        fillOpacity: 0.22,
+                                        opacity: 0.6,
+                                        className: "cwa-outline"
+                                    },
+                                    onEachFeature: function(feature, l) {
+                                        l.bindPopup(createPopupContent(properties));
+                                    }
+                                });
+                                polygons.push(cwaLayer);
+                            }
+                        });
+                    }
                     if (polygons.length > 0) {
                         layer = L.featureGroup(polygons);
                     }
@@ -618,6 +495,8 @@
         }
 
         function renderActiveCountyView() {
+            if (!countyFeatureCollection) return;
+
             countyOutlinesLayer = L.geoJSON(countyFeatureCollection, {
                 style: function() {
                     return {
@@ -631,6 +510,7 @@
             }).addTo(map);
 
             let countyAlertsByFIPS = {};
+
             allAlerts.forEach(alert => {
                 const properties = alert.properties;
                 const eventType = properties.event;
@@ -640,8 +520,8 @@
                 if (filterCheckbox && !filterCheckbox.checked) show = false;
                 if (!show) return;
 
-                // If the alert has no geometry, use its county codes (UGC or FIPS) to fill county in County Mode
-                if (!alert.geometry && properties.geocode && properties.geocode.UGC && window.countyLookup) {
+                // UGC (county) codes
+                if (properties.geocode && properties.geocode.UGC && countyLookup) {
                     properties.geocode.UGC.forEach(ugcCode => {
                         if (ugcCode.length === 6) {
                             const stateCode = ugcCode.substring(0, 2);
@@ -655,26 +535,21 @@
                         }
                     });
                 }
-                // If the alert has geometry and also counties, add as usual
-                else if (properties.geocode && properties.geocode.UGC && window.countyLookup) {
-                    properties.geocode.UGC.forEach(ugcCode => {
-                        if (ugcCode.length === 6) {
-                            const stateCode = ugcCode.substring(0, 2);
-                            const countyCode = ugcCode.substring(2);
-                            const fipsCode = stateCode + countyCode;
-                            if (!countyAlertsByFIPS[fipsCode]) countyAlertsByFIPS[fipsCode] = [];
-                            countyAlertsByFIPS[fipsCode].push({
-                                alert,
-                                style
-                            });
-                        }
+                // FIPS codes
+                if (properties.geocode && properties.geocode.FIPS && countyLookup) {
+                    properties.geocode.FIPS.forEach(fipsCode => {
+                        if (!countyAlertsByFIPS[fipsCode]) countyAlertsByFIPS[fipsCode] = [];
+                        countyAlertsByFIPS[fipsCode].push({
+                            alert,
+                            style
+                        });
                     });
                 }
             });
 
             const countyAlertFeatures = [];
             for (const fips in countyAlertsByFIPS) {
-                const base = window.countyLookup[fips];
+                const base = countyLookup[fips];
                 if (base) {
                     let highestSeverityIdx = 99;
                     let mostSevereAlertObj = null;
@@ -719,6 +594,31 @@
                     }
                 ).addTo(map);
             }
+            // Show marine zones and CWA outlines for reference (background only)
+            if (marineZonesFeatureCollection && marineZonesFeatureCollection.features.length > 0) {
+                marineZonesLayer = L.geoJSON(marineZonesFeatureCollection, {
+                    style: {
+                        color: "#11b6e8",
+                        weight: 1,
+                        fillColor: "#b6f1ff",
+                        fillOpacity: 0.09,
+                        opacity: 0.4,
+                        className: "marine-zone-outline"
+                    }
+                }).addTo(map);
+            }
+            if (cwaFeatureCollection && cwaFeatureCollection.features.length > 0) {
+                cwaLayer = L.geoJSON(cwaFeatureCollection, {
+                    style: {
+                        color: "#000",
+                        weight: 1,
+                        fillColor: "#fff",
+                        fillOpacity: 0,
+                        opacity: 0.13,
+                        className: "cwa-outline"
+                    }
+                }).addTo(map);
+            }
         }
 
         function addLayerEventListeners(layer, properties) {
@@ -732,14 +632,6 @@
             layer.on('mouseout', function() {
                 hideInfoPanel();
             });
-        }
-
-        function findCountyGeometry(ugcCode) {
-            if (!ugcCode || !window.countyLookup) return null;
-            const stateCode = ugcCode.substring(0, 2);
-            const countyCode = ugcCode.substring(2);
-            const fipsCode = stateCode + countyCode;
-            return window.countyLookup[fipsCode] || null;
         }
 
         function updateFiltersAndLegend() {
