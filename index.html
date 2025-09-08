@@ -361,16 +361,24 @@
                 countyGeojson = await response.json();
                 console.log('County boundaries loaded successfully');
                 
-                // Debug: Log the structure of the first feature
-                if (countyGeojson.features && countyGeojson.features.length > 0) {
-                    console.log('First county feature properties:', countyGeojson.features[0].properties);
-                    console.log('First county feature ID:', countyGeojson.features[0].id);
+                // Create a lookup table for counties by FIPS code
+                window.countyLookup = {};
+                if (countyGeojson && countyGeojson.objects && countyGeojson.objects.counties) {
+                    const counties = countyGeojson.objects.counties;
+                    const countyFeatures = topojson.feature(countyGeojson, counties).features;
+                    
+                    countyFeatures.forEach(feature => {
+                        if (feature.id) {
+                            window.countyLookup[feature.id] = feature;
+                        }
+                    });
+                    console.log('County lookup table created with', Object.keys(window.countyLookup).length, 'counties');
                 }
             } catch (error) {
                 console.error('Error loading county boundaries:', error);
             }
         }
-        // Load county boundaries from GeoJSO
+        
         // Save address to localStorage
         function saveAddress() {
             const address = document.getElementById('address-input').value;
@@ -392,7 +400,7 @@
                         const lat = parseFloat(data[0].lat);
                         const lon = parseFloat(data[0].lon);
                         
-                        userLocation = { lat, lon };
+                        userLocation = { lat, lng: lon };
                         
                         // Update map view
                         map.setView([lat, lon], 9);
@@ -431,6 +439,7 @@
             for (const id in alertLayers) {
                 map.removeLayer(alertLayers[id]);
             }
+            Object.keys(alertLayers).forEach(key => delete alertLayers[key]);
             
             // Fetch active alerts
             fetch('https://api.weather.gov/alerts/active')
@@ -448,7 +457,6 @@
         }
         
         // Process alerts and add to map
-        // Process alerts and add to map
         function processAlerts(alerts) {
             // Reset alert types
             alertTypes = {};
@@ -459,12 +467,6 @@
                 
                 // Track this alert type
                 alertTypes[properties.event] = true;
-                
-                // Skip alerts without any geometry information
-                if ((!geometry || geometry.type === 'Point') && 
-                    (!properties.geocode || !properties.geocode.UGC)) {
-                    return;
-                }
                 
                 // Determine the style based on alert type
                 const style = getAlertStyle(properties);
@@ -493,7 +495,7 @@
                     }
                 } 
                 // Handle county-based alerts (like watches) - these have UGC codes but no polygon geometry
-                else if (properties.geocode && properties.geocode.UGC && countyGeojson) {
+                else if (properties.geocode && properties.geocode.UGC && window.countyLookup) {
                     const ugcCodes = properties.geocode.UGC;
                     
                     // Create a feature group for all county outlines
@@ -550,37 +552,18 @@
         }
         
         // Find county geometry by UGC code
-        // Find county geometry by UGC code
         function findCountyGeometry(ugcCode) {
-            if (!countyGeojson || !ugcCode) return null;
-            
-            console.log('Looking for UGC:', ugcCode);
+            if (!ugcCode || !window.countyLookup) return null;
             
             // UGC format: SSCCCCC (State, County)
             const stateCode = ugcCode.substring(0, 2);
             const countyCode = ugcCode.substring(2);
             
-            // Find the county feature in the GeoJSON
-            const countyFeature = countyGeojson.features.find(feature => {
-                if (!feature.properties) return false;
-                
-                // Log the feature properties to understand the structure
-                console.log('Feature properties:', feature.properties);
-                
-                // Try different possible property names
-                return (feature.properties.state && feature.properties.county && 
-                        feature.properties.state === stateCode && 
-                        feature.properties.county === countyCode) ||
-                       (feature.properties.STATE && feature.properties.COUNTY && 
-                        feature.properties.STATE === stateCode && 
-                        feature.properties.COUNTY === countyCode) ||
-                       (feature.properties.STATEFP && feature.properties.COUNTYFP && 
-                        feature.properties.STATEFP === stateCode && 
-                        feature.properties.COUNTYFP === countyCode);
-            });
+            // Create FIPS code (state + county)
+            const fipsCode = stateCode + countyCode;
             
-            console.log('Found county:', countyFeature ? 'Yes' : 'No');
-            return countyFeature;
+            // Find the county feature in the lookup table
+            return window.countyLookup[fipsCode] || null;
         }
         
         // Update filters and legend based on active alert types
@@ -692,7 +675,6 @@
         }
         
         // Check if user is in any alert area
-        // Check if user is in any alert area
         function checkUserInAlertArea() {
             if (!userLocation || typeof userLocation.lat !== 'number' || typeof userLocation.lng !== 'number') {
                 console.error('Invalid user location:', userLocation);
@@ -775,5 +757,6 @@
         `;
         document.head.appendChild(style);
     </script>
+    <script src="https://unpkg.com/topojson@3"></script>
 </body>
 </html>
