@@ -90,7 +90,8 @@
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="https://unpkg.com/topojson@3"></script>
     <script>
-        const map = L.map('map', { zoomSnap: 0.1 }).setView([39.8283, -98.5795], 4);
+        const map = L.map('map', { zoomSnap: 0.1, preferCanvas: true }).setView([39.8283, -98.5795], 4);
+
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
@@ -201,10 +202,20 @@
                 geoapifyRequestCount = parseInt(savedCount);
                 document.getElementById("geoapify-count").textContent = geoapifyRequestCount;
             }
+
+            // Restore view mode from localStorage
+            const savedViewMode = localStorage.getItem("weatherTrackerViewMode");
+            if (savedViewMode) {
+                document.getElementById("view-mode").value = savedViewMode;
+                polygonMode = savedViewMode === "polygon";
+            }
+
             document.getElementById("view-mode").addEventListener("change", function() {
                 polygonMode = this.value === "polygon";
+                localStorage.setItem("weatherTrackerViewMode", this.value);
                 renderAlerts();
             });
+
             Promise.all([
                 loadAllCountyBoundaries(),
                 loadMarineZones(),
