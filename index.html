@@ -48,7 +48,7 @@
     <header>
         <div class="logo">
             <i>🌪️</i>
-            <h1>Severe Weather Tracker v1.0.1</h1>
+            <h1>Severe Weather Tracker</h1>
         </div>
         <div class="address-form">
             <input type="text" class="address-input" placeholder="Enter your address" id="address-input">
@@ -112,10 +112,9 @@
         let marineZonesLayer = null;
         let cwaLayer = null;
         let countyActiveLayer = null;
-
-        // ADDED: Layer for city points and alert polygons
         let cityPointsLayer = null;
         let alertPolygonLayer = null;
+        let affectedZoneLayer = null;
 
         const alertStyles = {
             "Tornado Warning": { color: "#ff0000", className: "pulsing-layer", severityRank: 1 },
@@ -169,7 +168,6 @@
         let cwaLookup = {};
         let countyLookup = {};
 
-        // State & territory abbreviations, including DC, PR, VI, GU, AS, MP
         const STATE_ABBRS = [
             "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
             "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC",
@@ -215,7 +213,6 @@
             setInterval(fetchWeatherData, 60000);
         });
 
-        // Load all county boundaries by fetching each state/territory GeoJSON and merging
         async function loadAllCountyBoundaries() {
             countyLookup = {};
             let features = [];
@@ -228,7 +225,6 @@
                         const geojson = await response.json();
                         if (geojson.features && Array.isArray(geojson.features)) {
                             for (const feature of geojson.features) {
-                                // FIPS code
                                 let fips = "";
                                 if (feature.properties) {
                                     if (feature.properties.GEOID) {
@@ -244,9 +240,7 @@
                         fetchCount++;
                         document.getElementById("progress-bar").style.width = `${Math.round((fetchCount / STATE_ABBRS.length) * 100)}%`;
                     }
-                } catch (error) {
-                    // Ignore failed fetches for now (territories may be missing)
-                }
+                } catch (error) {}
             }
             countyFeatureCollection = { type: "FeatureCollection", features };
         }
@@ -324,6 +318,18 @@
                 });
         }
 
+        async function fetchZoneGeometry(url) {
+            try {
+                let resp = await fetch(url);
+                if (!resp.ok) return null;
+                let data = await resp.json();
+                if (data.geometry && (data.geometry.type === "Polygon" || data.geometry.type === "MultiPolygon")) {
+                    return data.geometry;
+                }
+            } catch (e) {}
+            return null;
+        }
+
         function fetchWeatherData() {
             document.getElementById("loading").style.display = "block";
             Object.keys(alertLayers).forEach(id => {
@@ -339,9 +345,9 @@
                 map.removeLayer(countyOutlinesLayer);
                 countyOutlinesLayer = null;
             }
-            // ADDED: Remove city and alert polygon layers
             if (cityPointsLayer) { cityPointsLayer.clearLayers(); map.removeLayer(cityPointsLayer); cityPointsLayer = null; }
             if (alertPolygonLayer) { alertPolygonLayer.clearLayers(); map.removeLayer(alertPolygonLayer); alertPolygonLayer = null; }
+            if (affectedZoneLayer) { affectedZoneLayer.clearLayers(); map.removeLayer(affectedZoneLayer); affectedZoneLayer = null; }
             alertLayers = {};
             alertTypes = {};
             allAlerts = [];
@@ -380,9 +386,9 @@
                 map.removeLayer(countyOutlinesLayer);
                 countyOutlinesLayer = null;
             }
-            // ADDED: Remove city and alert polygon layers
             if (cityPointsLayer) { cityPointsLayer.clearLayers(); map.removeLayer(cityPointsLayer); cityPointsLayer = null; }
             if (alertPolygonLayer) { alertPolygonLayer.clearLayers(); map.removeLayer(alertPolygonLayer); alertPolygonLayer = null; }
+            if (affectedZoneLayer) { affectedZoneLayer.clearLayers(); map.removeLayer(affectedZoneLayer); affectedZoneLayer = null; }
             allAlerts.forEach(alert => {
                 const event = alert.properties.event;
                 alertTypes[event] = true;
@@ -510,7 +516,6 @@
             }
         }
 
-        // ADDITIVE: Enhanced renderActiveCountyView
         function renderActiveCountyView() {
             if (!countyFeatureCollection) return;
             countyOutlinesLayer = L.geoJSON(countyFeatureCollection, {
@@ -524,9 +529,12 @@
                     };
                 }
             }).addTo(map);
+
             let countyAlertsByFIPS = {};
-            let alertGeometries = []; // NEW - to store geometry polygons
-            let cityPoints = []; // NEW - to store city points
+            let alertGeometries = [];
+            let cityPoints = [];
+            let affectedZoneGeometriesPromises = [];
+            let affectedZoneProps = [];
 
             allAlerts.forEach(alert => {
                 const properties = alert.properties;
@@ -537,7 +545,6 @@
                 if (filterCheckbox && !filterCheckbox.checked) show = false;
                 if (!show) return;
 
-                // If alert has geometry, draw that
                 if (alert.geometry && (alert.geometry.type === "Polygon" || alert.geometry.type === "MultiPolygon")) {
                     alertGeometries.push({
                         geometry: alert.geometry,
@@ -545,12 +552,15 @@
                         properties: properties
                     });
                 }
-
-                // If alert mentions a city (areaDesc or headline, etc), try to get a point for it
+                if ((!alert.geometry || !alert.geometry.coordinates) && Array.isArray(properties.affectedZones) && properties.affectedZones.length > 0) {
+                    properties.affectedZones.forEach(zoneUrl => {
+                        affectedZoneProps.push({style: style, properties: properties});
+                        affectedZoneGeometriesPromises.push(fetchZoneGeometry(zoneUrl));
+                    });
+                }
                 let mentionCity = false;
                 let cityName = null;
                 if (properties.areaDesc && /city/i.test(properties.areaDesc)) {
-                    // Try to extract city name from areaDesc
                     const match = properties.areaDesc.match(/([A-Za-z ]+ City)/i);
                     if (match) {
                         mentionCity = true;
@@ -558,16 +568,13 @@
                     }
                 }
                 if (!mentionCity && properties.headline && /city/i.test(properties.headline)) {
-                    // Try to extract city name from headline
                     const match2 = properties.headline.match(/([A-Za-z ]+ City)/i);
                     if (match2) {
                         mentionCity = true;
                         cityName = match2[1];
                     }
                 }
-                // If found a city name, geocode and add to cityPoints
                 if (mentionCity && cityName) {
-                    // Use Nominatim to get coordinates, asynchronously add marker
                     fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityName)}&countrycodes=us&limit=1`)
                         .then(response => response.json())
                         .then(data => {
@@ -577,12 +584,10 @@
                                     lng: parseFloat(data[0].lon),
                                     properties: properties
                                 });
-                                addCityPointsLayer(cityPoints); // Update city markers on the map
+                                addCityPointsLayer(cityPoints);
                             }
                         });
                 }
-
-                // County/zone association same as before
                 if (properties.geocode && properties.geocode.UGC && countyLookup) {
                     properties.geocode.UGC.forEach(ugcCode => {
                         if (ugcCode.length === 6) {
@@ -608,7 +613,6 @@
                 }
             });
 
-            // Draw alert polygons from geometry
             if (alertGeometries.length > 0) {
                 alertPolygonLayer = L.layerGroup();
                 alertGeometries.forEach(item => {
@@ -630,7 +634,31 @@
                 alertPolygonLayer.addTo(map);
             }
 
-            // County boundary shading
+            if (affectedZoneGeometriesPromises.length > 0) {
+                Promise.all(affectedZoneGeometriesPromises).then(geoms => {
+                    affectedZoneLayer = L.layerGroup();
+                    geoms.forEach((geometry, i) => {
+                        if (!geometry) return;
+                        const style = affectedZoneProps[i].style;
+                        const properties = affectedZoneProps[i].properties;
+                        let layer = null;
+                        if (geometry.type === "Polygon") {
+                            const coordinates = geometry.coordinates[0];
+                            const latLngs = coordinates.map(coord => [coord[1], coord[0]]);
+                            layer = L.polygon(latLngs, style).bindPopup(createPopupContent(properties));
+                        } else if (geometry.type === "MultiPolygon") {
+                            const polygons = geometry.coordinates.map(polygonCoords => {
+                                const latLngs = polygonCoords[0].map(coord => [coord[1], coord[0]]);
+                                return L.polygon(latLngs, style);
+                            });
+                            layer = L.featureGroup(polygons).bindPopup(createPopupContent(properties));
+                        }
+                        if (layer) { affectedZoneLayer.addLayer(layer); }
+                    });
+                    affectedZoneLayer.addTo(map);
+                });
+            }
+
             const countyAlertFeatures = [];
             for (const fips in countyAlertsByFIPS) {
                 const base = countyLookup[fips];
@@ -678,7 +706,6 @@
                 ).addTo(map);
             }
 
-            // Draw city points (run once if needed)
             addCityPointsLayer(cityPoints);
 
             if (marineZonesFeatureCollection && marineZonesFeatureCollection.features.length > 0) {
@@ -707,7 +734,6 @@
             }
         }
 
-        // NEW: Add city points to the map as small circles
         function addCityPointsLayer(cityPoints) {
             if (cityPointsLayer) {
                 cityPointsLayer.clearLayers();
