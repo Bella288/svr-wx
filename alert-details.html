@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alert Details</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        body {
+            background: #f7f9fa;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 600px;
+            margin: 2rem auto;
+            background: #fff;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+        }
+        h1 {
+            color: #2c3e50;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        .meta {
+            margin: 1.5rem 0 1rem 0;
+            font-size: 1.05rem;
+            color: #34495e;
+        }
+        .section-label {
+            color: #4a6491;
+            font-weight: bold;
+            margin-top: 1.5rem;
+            margin-bottom: 0.2rem;
+            font-size: 1.1rem;
+        }
+        .instructions {
+            background: #f8fafc;
+            padding: 1rem;
+            border-radius: 7px;
+            border-left: 4px solid #3498db;
+            margin: 0.4rem 0 1rem 0;
+            color: #222;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 2rem;
+            color: #3498db;
+            text-decoration: none;
+            font-weight: bold;
+            border-bottom: 1px dashed #3498db;
+            transition: color 0.2s;
+        }
+        .back-link:hover {
+            color: #1d6fa5;
+        }
+        .details-section .section-label {
+            margin-top: 0.5rem;
+        }
+        .details-section {
+            margin-bottom: 1rem;
+        }
+        .label {
+            color: #7b8794;
+            font-weight: bold;
+            margin-right: 0.4rem;
+        }
+        .value {
+            color: #222;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="alert-title">Alert Details</h1>
+        <div class="meta details-section">
+            <span class="label">Start:</span><span class="value" id="alert-start">-</span><br>
+            <span class="label">End:</span><span class="value" id="alert-end">-</span>
+        </div>
+        <div class="details-section">
+            <span class="section-label">Issued by:</span>
+            <span class="value" id="alert-issuer">-</span>
+        </div>
+        <div class="details-section">
+            <span class="section-label">Severity:</span>
+            <span class="value" id="alert-severity">-</span>
+        </div>
+        <div class="details-section">
+            <span class="section-label">Likelihood:</span>
+            <span class="value" id="alert-likelihood">-</span>
+        </div>
+        <div class="details-section">
+            <span class="section-label">Where:</span>
+            <span class="value" id="alert-where">-</span>
+        </div>
+        <div class="details-section">
+            <span class="section-label">Movement:</span>
+            <span class="value" id="alert-movement">-</span>
+        </div>
+        <div class="details-section">
+            <span class="section-label">Details:</span>
+            <div class="instructions" id="alert-details">-</div>
+        </div>
+        <div class="details-section">
+            <span class="section-label">Instructions:</span>
+            <div class="instructions" id="alert-instructions">-</div>
+        </div>
+        <a class="back-link" href="javascript:window.history.back()">← Back</a>
+    </div>
+    <script>
+        function fromQueryString(qs) {
+            // Parse query string into object. Handles ?key=value&key2=value2...
+            const params = {};
+            qs.replace(/^\?/, "").split("&").forEach(pair => {
+                if (!pair) return;
+                const [k, v] = pair.split("=");
+                params[decodeURIComponent(k)] = decodeURIComponent(v || "");
+            });
+            return params;
+        }
+
+        function parseDate(val) {
+            if (!val) return "-";
+            const d = new Date(val);
+            if (isNaN(d)) return val;
+            return d.toLocaleString();
+        }
+
+        function safe(str) {
+            if (!str) return "-";
+            return str.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        function renderAlertDetails(alert) {
+            document.getElementById("alert-title").textContent = safe(alert.event || "Alert Details");
+            document.getElementById("alert-start").textContent = parseDate(alert.effective);
+            document.getElementById("alert-end").textContent = parseDate(alert.expires);
+            document.getElementById("alert-issuer").textContent = safe(alert.senderName || alert.issuer || "-");
+            document.getElementById("alert-severity").textContent = safe(alert.severity || "-");
+            document.getElementById("alert-likelihood").textContent = safe(alert.certainty || alert.likelihood || "-");
+            document.getElementById("alert-where").textContent = safe(alert.areaDesc || alert.where || "-");
+            document.getElementById("alert-movement").textContent = safe(alert.movement || (alert.parameters && alert.parameters.movement) || "-");
+            document.getElementById("alert-details").innerHTML = safe(alert.description || alert.headline || "-").replace(/\n/g, "<br>");
+            document.getElementById("alert-instructions").innerHTML = safe(alert.instruction || "-").replace(/\n/g, "<br>");
+        }
+
+        // 1. From localStorage or sessionStorage (preferred, if set by previous page)
+        // 2. From query string (as JSON, URI encoded) as fallback
+        let alertObj = null;
+        try {
+            const local = window.sessionStorage.getItem("selectedAlert") || window.localStorage.getItem("selectedAlert");
+            if (local) alertObj = JSON.parse(local);
+        } catch (e) {}
+        if (!alertObj) {
+            const params = fromQueryString(window.location.search);
+            if (params.alert) {
+                try { alertObj = JSON.parse(decodeURIComponent(params.alert)); } catch (e) {}
+            }
+        }
+        if (alertObj) {
+            renderAlertDetails(alertObj);
+        } else {
+            document.getElementById("alert-title").textContent = "Alert not found";
+        }
+    </script>
+</body>
+</html>
