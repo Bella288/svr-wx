@@ -114,60 +114,67 @@
         let countyActiveLayer = null;
 
         const alertStyles = {
-            'Tornado Warning': { color: '#ff0000', className: 'pulsing-layer', severityRank: 1 },
-            'Tornado Watch': { color: '#ffcc00', dashArray: '10, 10', fillOpacity: 0.3, severityRank: 2 },
-            'Tornado Emergency': { color: '#cc00ff', className: 'pulsing-layer', severityRank: 0 },
-            'Flash Flood Warning': { color: '#880000', className: 'pulsing-layer', severityRank: 2 },
-            'Flood Advisory': { color: '#ffff00', dashArray: '10, 10', fillOpacity: 0.3, severityRank: 5 },
-            'Flood Watch': { color: '#aaff00', dashArray: '10, 10', fillOpacity: 0.3, severityRank: 4 },
-            'Flood Warning': { color: '#007700', className: 'pulsing-layer', severityRank: 2 },
-            'Coastal Flood Advisory': { color: '#77aaff', dashArray: '10, 10', fillOpacity: 0.3, severityRank: 5 },
-            'Coastal Flood Warning': { color: '#0055ff', className: 'pulsing-layer', severityRank: 2 },
-            'Coastal Flood Statement': { color: '#aaccff', dashArray: '5, 5', fillOpacity: 0.2, severityRank: 6 },
-            'Severe Thunderstorm Warning': { color: '#ff0000', dashArray: '10, 10', className: 'pulsing-layer', severityRank: 2 },
-            'Severe Thunderstorm Watch': { color: '#ffcc00', fillOpacity: 0.3, severityRank: 3 },
-            'Special Weather Statement': { color: '#cccccc', dashArray: '5, 5', fillOpacity: 0.2, severityRank: 7 },
-            'Winter Storm Warning': { color: '#00aaff', className: 'pulsing-layer', severityRank: 2 },
-            'Winter Storm Watch': { color: '#00ccff', dashArray: '10, 10', fillOpacity: 0.3, severityRank: 3 },
-            'Winter Weather Advisory': { color: '#00ffff', dashArray: '5, 5', fillOpacity: 0.3, severityRank: 4 },
-            'Blizzard Warning': { color: '#ffffff', className: 'pulsing-layer', severityRank: 1 },
-            'Wind Advisory': { color: '#ffaa00', dashArray: '5, 5', fillOpacity: 0.3, severityRank: 5 },
-            'High Wind Warning': { color: '#ff7700', className: 'pulsing-layer', severityRank: 2 },
-            'Gale Warning': { color: '#0077ff', dashArray: '10, 10', fillOpacity: 0.3, severityRank: 3 },
-            'Gale Watch': { color: '#0055cc', dashArray: '10, 10', fillOpacity: 0.3, severityRank: 4 },
-            'Small Craft Advisory': { color: '#5555ff', dashArray: '5, 5', fillOpacity: 0.3, severityRank: 6 },
-            'Marine Weather Statement': { color: '#aaaaff', dashArray: '5, 5', fillOpacity: 0.2, severityRank: 8 },
-            'Tropical Storm Warning': { color: '#00ddcc', className: 'pulsing-layer', severityRank: 1 },
-            'Tropical Storm Watch': { color: '#00ffee', dashArray: '10, 10', fillOpacity: 0.3, severityRank: 3 },
-            'Hurricane Warning': { color: '#ff0000', className: 'pulsing-layer', severityRank: 0 },
-            'Hurricane Watch': { color: '#ff8888', dashArray: '10, 10', fillOpacity: 0.3, severityRank: 2 },
-            'Heat Advisory': { color: '#ff5500', dashArray: '5, 5', fillOpacity: 0.3, severityRank: 3 },
-            'Excessive Heat Warning': { color: '#ff0000', className: 'pulsing-layer', severityRank: 1 },
-            'Dense Fog Advisory': { color: '#aaaaaa', dashArray: '5, 5', fillOpacity: 0.3, severityRank: 6 },
-            'Dense Smoke Advisory': { color: '#666666', dashArray: '5, 5', fillOpacity: 0.3, severityRank: 6 },
-            'Air Quality Alert': { color: '#aa66aa', dashArray: '5, 5', fillOpacity: 0.3, severityRank: 7 },
-            'Rip Current Statement': { color: '#00ccff', dashArray: '5, 5', fillOpacity: 0.3, severityRank: 8 },
-            'Beach Hazards Statement': { color: '#00aacc', dashArray: '5, 5', fillOpacity: 0.3, severityRank: 8 },
-            'Lake Wind Advisory': { color: '#55aaff', dashArray: '5, 5', fillOpacity: 0.3, severityRank: 6 },
-            'Frost Advisory': { color: '#ccffff', dashArray: '5, 5', fillOpacity: 0.3, severityRank: 5 },
-            'Freeze Warning': { color: '#00ffff', className: 'pulsing-layer', severityRank: 2 },
-            'Freeze Watch': { color: '#00cccc', dashArray: '10, 10', fillOpacity: 0.3, severityRank: 4 },
-            'Ashfall Advisory': { color: '#888888', dashArray: '5, 5', fillOpacity: 0.3, severityRank: 6 },
-            'Dust Storm Warning': { color: '#ccaa00', className: 'pulsing-layer', severityRank: 1 },
-            'Dust Storm Advisory': { color: '#ccbb77', dashArray: '5, 5', fillOpacity: 0.3, severityRank: 5 },
-            'Snow Squall Warning': { color: '#ffffff', className: 'pulsing-layer', severityRank: 1 },
-            'Extreme Wind Warning': { color: '#ff00ff', className: 'pulsing-layer', severityRank: 0 },
-            'Special Marine Warning': { color: '#ff5555', className: 'pulsing-layer', severityRank: 1 },
-            '_default': { color: '#5555ff', fillOpacity: 0.3, severityRank: 99 }
+            "Tornado Warning": { color: "#ff0000", className: "pulsing-layer", severityRank: 1 },
+            "Tornado Watch": { color: "#ffcc00", dashArray: "10, 10", fillOpacity: 0.3, severityRank: 2 },
+            "Tornado Emergency": { color: "#cc00ff", className: "pulsing-layer", severityRank: 0 },
+            "Flash Flood Warning": { color: "#880000", className: "pulsing-layer", severityRank: 2 },
+            "Flood Advisory": { color: "#ffff00", dashArray: "10, 10", fillOpacity: 0.3, severityRank: 5 },
+            "Flood Watch": { color: "#aaff00", dashArray: "10, 10", fillOpacity: 0.3, severityRank: 4 },
+            "Flood Warning": { color: "#007700", className: "pulsing-layer", severityRank: 2 },
+            "Coastal Flood Advisory": { color: "#77aaff", dashArray: "10, 10", fillOpacity: 0.3, severityRank: 5 },
+            "Coastal Flood Warning": { color: "#0055ff", className: "pulsing-layer", severityRank: 2 },
+            "Coastal Flood Statement": { color: "#aaccff", dashArray: "5, 5", fillOpacity: 0.2, severityRank: 6 },
+            "Severe Thunderstorm Warning": { color: "#ff0000", dashArray: "10, 10", className: "pulsing-layer", severityRank: 2 },
+            "Severe Thunderstorm Watch": { color: "#ffcc00", fillOpacity: 0.3, severityRank: 3 },
+            "Special Weather Statement": { color: "#cccccc", dashArray: "5, 5", fillOpacity: 0.2, severityRank: 7 },
+            "Winter Storm Warning": { color: "#00aaff", className: "pulsing-layer", severityRank: 2 },
+            "Winter Storm Watch": { color: "#00ccff", dashArray: "10, 10", fillOpacity: 0.3, severityRank: 3 },
+            "Winter Weather Advisory": { color: "#00ffff", dashArray: "5, 5", fillOpacity: 0.3, severityRank: 4 },
+            "Blizzard Warning": { color: "#ffffff", className: "pulsing-layer", severityRank: 1 },
+            "Wind Advisory": { color: "#ffaa00", dashArray: "5, 5", fillOpacity: 0.3, severityRank: 5 },
+            "High Wind Warning": { color: "#ff7700", className: "pulsing-layer", severityRank: 2 },
+            "Gale Warning": { color: "#0077ff", dashArray: "10, 10", fillOpacity: 0.3, severityRank: 3 },
+            "Gale Watch": { color: "#0055cc", dashArray: "10, 10", fillOpacity: 0.3, severityRank: 4 },
+            "Small Craft Advisory": { color: "#5555ff", dashArray: "5, 5", fillOpacity: 0.3, severityRank: 6 },
+            "Marine Weather Statement": { color: "#aaaaff", dashArray: "5, 5", fillOpacity: 0.2, severityRank: 8 },
+            "Tropical Storm Warning": { color: "#00ddcc", className: "pulsing-layer", severityRank: 1 },
+            "Tropical Storm Watch": { color: "#00ffee", dashArray: "10, 10", fillOpacity: 0.3, severityRank: 3 },
+            "Hurricane Warning": { color: "#ff0000", className: "pulsing-layer", severityRank: 0 },
+            "Hurricane Watch": { color: "#ff8888", dashArray: "10, 10", fillOpacity: 0.3, severityRank: 2 },
+            "Heat Advisory": { color: "#ff5500", dashArray: "5, 5", fillOpacity: 0.3, severityRank: 3 },
+            "Excessive Heat Warning": { color: "#ff0000", className: "pulsing-layer", severityRank: 1 },
+            "Dense Fog Advisory": { color: "#aaaaaa", dashArray: "5, 5", fillOpacity: 0.3, severityRank: 6 },
+            "Dense Smoke Advisory": { color: "#666666", dashArray: "5, 5", fillOpacity: 0.3, severityRank: 6 },
+            "Air Quality Alert": { color: "#aa66aa", dashArray: "5, 5", fillOpacity: 0.3, severityRank: 7 },
+            "Rip Current Statement": { color: "#00ccff", dashArray: "5, 5", fillOpacity: 0.3, severityRank: 8 },
+            "Beach Hazards Statement": { color: "#00aacc", dashArray: "5, 5", fillOpacity: 0.3, severityRank: 8 },
+            "Lake Wind Advisory": { color: "#55aaff", dashArray: "5, 5", fillOpacity: 0.3, severityRank: 6 },
+            "Frost Advisory": { color: "#ccffff", dashArray: "5, 5", fillOpacity: 0.3, severityRank: 5 },
+            "Freeze Warning": { color: "#00ffff", className: "pulsing-layer", severityRank: 2 },
+            "Freeze Watch": { color: "#00cccc", dashArray: "10, 10", fillOpacity: 0.3, severityRank: 4 },
+            "Ashfall Advisory": { color: "#888888", dashArray: "5, 5", fillOpacity: 0.3, severityRank: 6 },
+            "Dust Storm Warning": { color: "#ccaa00", className: "pulsing-layer", severityRank: 1 },
+            "Dust Storm Advisory": { color: "#ccbb77", dashArray: "5, 5", fillOpacity: 0.3, severityRank: 5 },
+            "Snow Squall Warning": { color: "#ffffff", className: "pulsing-layer", severityRank: 1 },
+            "Extreme Wind Warning": { color: "#ff00ff", className: "pulsing-layer", severityRank: 0 },
+            "Special Marine Warning": { color: "#ff5555", className: "pulsing-layer", severityRank: 1 },
+            "_default": { color: "#5555ff", fillOpacity: 0.3, severityRank: 99 }
         };
 
         let marineZoneLookup = {};
         let cwaLookup = {};
         let countyLookup = {};
 
+        // State & territory abbreviations, including DC, PR, VI, GU, AS, MP
+        const STATE_ABBRS = [
+            "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
+            "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC",
+            "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY","DC","PR","VI","GU","AS","MP"
+        ];
+
         function getAlertStyle(properties) {
             const eventType = properties.event;
-            const styleConfig = alertStyles[eventType] || alertStyles['_default'];
+            const styleConfig = alertStyles[eventType] || alertStyles["_default"];
             return {
                 color: styleConfig.color,
                 weight: 3,
@@ -180,56 +187,69 @@
             };
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const savedAddress = localStorage.getItem('weatherTrackerAddress');
+        document.addEventListener("DOMContentLoaded", function() {
+            const savedAddress = localStorage.getItem("weatherTrackerAddress");
             if (savedAddress) {
-                document.getElementById('address-input').value = savedAddress;
+                document.getElementById("address-input").value = savedAddress;
                 geocodeAddress(savedAddress);
             }
-            document.getElementById('save-address').addEventListener('click', saveAddress);
-            const savedCount = localStorage.getItem('geoapifyRequestCount');
+            document.getElementById("save-address").addEventListener("click", saveAddress);
+            const savedCount = localStorage.getItem("geoapifyRequestCount");
             if (savedCount) {
                 geoapifyRequestCount = parseInt(savedCount);
-                document.getElementById('geoapify-count').textContent = geoapifyRequestCount;
+                document.getElementById("geoapify-count").textContent = geoapifyRequestCount;
             }
-            document.getElementById('view-mode').addEventListener('change', function() {
-                polygonMode = this.value === 'polygon';
+            document.getElementById("view-mode").addEventListener("change", function() {
+                polygonMode = this.value === "polygon";
                 renderAlerts();
             });
             Promise.all([
-                loadCountyBoundaries(),
+                loadAllCountyBoundaries(),
                 loadMarineZones(),
                 loadCWABoundaries()
             ]).then(() => fetchWeatherData());
             setInterval(fetchWeatherData, 60000);
         });
 
-        async function loadCountyBoundaries() {
-            try {
-                const response = await fetch('https://cdn.jsdelivr.net/npm/us-atlas@3/counties-10m.json');
-                countyGeojson = await response.json();
-                countyLookup = {};
-                if (countyGeojson && countyGeojson.objects && countyGeojson.objects.counties) {
-                    const counties = countyGeojson.objects.counties;
-                    const countyFeatures = topojson.feature(countyGeojson, counties).features;
-                    countyFeatureCollection = {
-                        type: "FeatureCollection",
-                        features: countyFeatures
-                    };
-                    countyFeatures.forEach(feature => {
-                        if (feature.id) countyLookup[feature.id] = feature;
-                    });
+        // Load all county boundaries by fetching each state/territory GeoJSON and merging
+        async function loadAllCountyBoundaries() {
+            countyLookup = {};
+            let features = [];
+            let fetchCount = 0;
+            for (let abbr of STATE_ABBRS) {
+                try {
+                    const url = `https://raw.githubusercontent.com/Bella288/svr-wx-data/main/counties_${abbr}.geojson`;
+                    const response = await fetch(url);
+                    if (response.ok) {
+                        const geojson = await response.json();
+                        if (geojson.features && Array.isArray(geojson.features)) {
+                            for (const feature of geojson.features) {
+                                // FIPS code
+                                let fips = "";
+                                if (feature.properties) {
+                                    if (feature.properties.GEOID) {
+                                        fips = feature.properties.GEOID;
+                                    } else if (feature.properties.FIPS) {
+                                        fips = feature.properties.FIPS;
+                                    }
+                                    if (fips) countyLookup[fips] = feature;
+                                }
+                                features.push(feature);
+                            }
+                        }
+                        fetchCount++;
+                        document.getElementById("progress-bar").style.width = `${Math.round((fetchCount / STATE_ABBRS.length) * 100)}%`;
+                    }
+                } catch (error) {
+                    // Ignore failed fetches for now (territories may be missing)
                 }
-            } catch (error) {
-                console.error('Error loading county boundaries:', error);
             }
+            countyFeatureCollection = { type: "FeatureCollection", features };
         }
 
         async function loadMarineZones() {
             try {
-                // NOAA marine zones GeoJSON: https://mapservices.weather.noaa.gov/vector/rest/services/Marine/MapServer/2/query?where=1=1&outFields=*&outSR=4326&f=geojson
-                // But let's use the static version for reliability:
-                const url = 'https://raw.githubusercontent.com/Bella288/svr-wx-data/main/marine_zones_us.geojson';
+                const url = "https://raw.githubusercontent.com/Bella288/svr-wx-data/main/marine_zones_us.geojson";
                 const resp = await fetch(url);
                 marineZonesGeojson = await resp.json();
                 marineZonesFeatureCollection = marineZonesGeojson;
@@ -244,14 +264,12 @@
             } catch (error) {
                 marineZonesGeojson = { type: "FeatureCollection", features: [] };
                 marineZoneLookup = {};
-                console.error('Error loading marine zones:', error);
             }
         }
 
         async function loadCWABoundaries() {
             try {
-                // NOAA CWA (forecast office) boundaries static GeoJSON
-                const url = 'https://raw.githubusercontent.com/Bella288/svr-wx-data/main/nws_cwa.geojson';
+                const url = "https://raw.githubusercontent.com/Bella288/svr-wx-data/main/nws_cwa.geojson";
                 const resp = await fetch(url);
                 cwaGeojson = await resp.json();
                 cwaFeatureCollection = cwaGeojson;
@@ -266,20 +284,19 @@
             } catch (error) {
                 cwaGeojson = { type: "FeatureCollection", features: [] };
                 cwaLookup = {};
-                console.error('Error loading CWA boundaries:', error);
             }
         }
 
         function saveAddress() {
-            const address = document.getElementById('address-input').value;
-            if (address.trim() !== '') {
-                localStorage.setItem('weatherTrackerAddress', address);
+            const address = document.getElementById("address-input").value;
+            if (address.trim() !== "") {
+                localStorage.setItem("weatherTrackerAddress", address);
                 geocodeAddress(address);
             }
         }
 
         function geocodeAddress(address) {
-            document.getElementById('loading').style.display = 'block';
+            document.getElementById("loading").style.display = "block";
             fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`)
                 .then(response => response.json())
                 .then(data => {
@@ -289,23 +306,22 @@
                         userLocation = { lat, lng: lon };
                         map.setView([lat, lon], 9);
                         if (userMarker) map.removeLayer(userMarker);
-                        userMarker = L.marker([lat, lon]).addTo(map).bindPopup('Your location').openPopup();
+                        userMarker = L.marker([lat, lon]).addTo(map).bindPopup("Your location").openPopup();
                         checkUserInAlertArea();
                     } else {
-                        alert('Address not found. Please try a more specific address.');
+                        alert("Address not found. Please try a more specific address.");
                     }
                 })
                 .catch(error => {
-                    console.error('Geocoding error:', error);
-                    alert('Error finding address. Please try again.');
+                    alert("Error finding address. Please try again.");
                 })
                 .finally(() => {
-                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById("loading").style.display = "none";
                 });
         }
 
         function fetchWeatherData() {
-            document.getElementById('loading').style.display = 'block';
+            document.getElementById("loading").style.display = "block";
             Object.keys(alertLayers).forEach(id => {
                 try { map.removeLayer(alertLayers[id]); } catch {}
             });
@@ -322,24 +338,22 @@
             alertLayers = {};
             alertTypes = {};
             allAlerts = [];
-            document.getElementById('progress-bar').style.width = '0%';
-
-            fetch('https://api.weather.gov/alerts/active')
+            document.getElementById("progress-bar").style.width = "0%";
+            fetch("https://api.weather.gov/alerts/active")
                 .then(r => r.json())
                 .then(data => {
                     allAlerts = (data.features || []);
                     if (!allAlerts.length) {
-                        document.getElementById('loading').style.display = 'none';
+                        document.getElementById("loading").style.display = "none";
                         return;
                     }
                     renderAlerts();
-                    document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
-                    document.getElementById('progress-bar').style.width = '100%';
-                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById("last-updated").textContent = new Date().toLocaleTimeString();
+                    document.getElementById("progress-bar").style.width = "100%";
+                    document.getElementById("loading").style.display = "none";
                 })
                 .catch(e => {
-                    console.error('NWS fetch failed:', e);
-                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById("loading").style.display = "none";
                 });
         }
 
@@ -359,13 +373,11 @@
                 map.removeLayer(countyOutlinesLayer);
                 countyOutlinesLayer = null;
             }
-
             allAlerts.forEach(alert => {
                 const event = alert.properties.event;
                 alertTypes[event] = true;
             });
             updateFiltersAndLegend();
-
             if (polygonMode) {
                 allAlerts.forEach(alert => {
                     processAlertForView(alert, true);
@@ -381,20 +393,18 @@
             const geometry = alert.geometry;
             const eventType = properties.event;
             const style = getAlertStyle(properties);
-
             let layer = null;
             let show = true;
-            const filterCheckbox = document.getElementById('filter-' + eventType.replace(/\s+/g, '-'));
+            const filterCheckbox = document.getElementById("filter-" + eventType.replace(/\s+/g, "-"));
             if (filterCheckbox && !filterCheckbox.checked) show = false;
-
             if (polygonMode) {
-                if (geometry && (geometry.type === 'Polygon' || geometry.type === 'MultiPolygon')) {
-                    if (geometry.type === 'Polygon') {
+                if (geometry && (geometry.type === "Polygon" || geometry.type === "MultiPolygon")) {
+                    if (geometry.type === "Polygon") {
                         const coordinates = geometry.coordinates[0];
                         const latLngs = coordinates.map(coord => [coord[1], coord[0]]);
                         layer = L.polygon(latLngs, style)
                                 .bindPopup(createPopupContent(properties));
-                    } else if (geometry.type === 'MultiPolygon') {
+                    } else if (geometry.type === "MultiPolygon") {
                         const polygons = geometry.coordinates.map(polygonCoords => {
                             const latLngs = polygonCoords[0].map(coord => [coord[1], coord[0]]);
                             return L.polygon(latLngs, style);
@@ -403,7 +413,6 @@
                     }
                 } else {
                     let polygons = [];
-                    // Try counties (UGC and FIPS)
                     if (properties.geocode && properties.geocode.UGC && countyLookup && countyFeatureCollection) {
                         properties.geocode.UGC.forEach(ugcCode => {
                             if (ugcCode.length === 6) {
@@ -437,7 +446,6 @@
                             }
                         });
                     }
-                    // Try marine zones
                     if (properties.geocode && properties.geocode.MARINE && marineZoneLookup && marineZonesFeatureCollection) {
                         properties.geocode.MARINE.forEach(zoneCode => {
                             const marineFeat = marineZoneLookup[zoneCode];
@@ -459,7 +467,6 @@
                             }
                         });
                     }
-                    // Try CWA/issuing area
                     if (properties.geocode && properties.geocode.CWA && cwaLookup && cwaFeatureCollection) {
                         properties.geocode.CWA.forEach(cwaCode => {
                             const cwaFeat = cwaLookup[cwaCode];
@@ -486,7 +493,6 @@
                     }
                 }
             }
-
             if (layer && show) {
                 addLayerEventListeners(layer, properties);
                 alertLayers[properties.id] = layer;
@@ -496,7 +502,6 @@
 
         function renderActiveCountyView() {
             if (!countyFeatureCollection) return;
-
             countyOutlinesLayer = L.geoJSON(countyFeatureCollection, {
                 style: function() {
                     return {
@@ -508,19 +513,15 @@
                     };
                 }
             }).addTo(map);
-
             let countyAlertsByFIPS = {};
-
             allAlerts.forEach(alert => {
                 const properties = alert.properties;
                 const eventType = properties.event;
                 const style = getAlertStyle(properties);
                 let show = true;
-                const filterCheckbox = document.getElementById('filter-' + eventType.replace(/\s+/g, '-'));
+                const filterCheckbox = document.getElementById("filter-" + eventType.replace(/\s+/g, "-"));
                 if (filterCheckbox && !filterCheckbox.checked) show = false;
                 if (!show) return;
-
-                // UGC (county) codes
                 if (properties.geocode && properties.geocode.UGC && countyLookup) {
                     properties.geocode.UGC.forEach(ugcCode => {
                         if (ugcCode.length === 6) {
@@ -535,7 +536,6 @@
                         }
                     });
                 }
-                // FIPS codes
                 if (properties.geocode && properties.geocode.FIPS && countyLookup) {
                     properties.geocode.FIPS.forEach(fipsCode => {
                         if (!countyAlertsByFIPS[fipsCode]) countyAlertsByFIPS[fipsCode] = [];
@@ -546,7 +546,6 @@
                     });
                 }
             });
-
             const countyAlertFeatures = [];
             for (const fips in countyAlertsByFIPS) {
                 const base = countyLookup[fips];
@@ -569,7 +568,6 @@
                     }
                 }
             }
-
             if (countyAlertFeatures.length > 0) {
                 countyActiveLayer = L.geoJSON(
                     { type: "FeatureCollection", features: countyAlertFeatures },
@@ -594,7 +592,6 @@
                     }
                 ).addTo(map);
             }
-            // Show marine zones and CWA outlines for reference (background only)
             if (marineZonesFeatureCollection && marineZonesFeatureCollection.features.length > 0) {
                 marineZonesLayer = L.geoJSON(marineZonesFeatureCollection, {
                     style: {
@@ -622,38 +619,38 @@
         }
 
         function addLayerEventListeners(layer, properties) {
-            layer.on('mouseover', function(e) {
+            layer.on("mouseover", function(e) {
                 if (e.layer && e.layer.getLatLng) {
                     showInfoPanel(properties, e.layer.getLatLng());
                 } else if (e.latlng) {
                     showInfoPanel(properties, e.latlng);
                 }
             });
-            layer.on('mouseout', function() {
+            layer.on("mouseout", function() {
                 hideInfoPanel();
             });
         }
 
         function updateFiltersAndLegend() {
-            const filtersContainer = document.getElementById('alert-filters');
-            const legendContainer = document.getElementById('legend-items');
-            filtersContainer.innerHTML = '';
-            legendContainer.innerHTML = '';
+            const filtersContainer = document.getElementById("alert-filters");
+            const legendContainer = document.getElementById("legend-items");
+            filtersContainer.innerHTML = "";
+            legendContainer.innerHTML = "";
             Object.keys(alertTypes).sort().forEach(alertType => {
                 const style = getAlertStyle({ event: alertType });
-                const filterDiv = document.createElement('div');
-                filterDiv.className = 'filter-checkbox';
+                const filterDiv = document.createElement("div");
+                filterDiv.className = "filter-checkbox";
                 filterDiv.innerHTML = `
-                    <input type="checkbox" id="filter-${alertType.replace(/\s+/g, '-')}" 
+                    <input type="checkbox" id="filter-${alertType.replace(/\s+/g, "-")}" 
                            checked onchange="toggleAlertType('${alertType}')">
-                    <label for="filter-${alertType.replace(/\s+/g, '-')}">${alertType}</label>
+                    <label for="filter-${alertType.replace(/\s+/g, "-")}">${alertType}</label>
                 `;
                 filtersContainer.appendChild(filterDiv);
-                const legendItem = document.createElement('div');
-                legendItem.className = 'legend-item';
+                const legendItem = document.createElement("div");
+                legendItem.className = "legend-item";
                 legendItem.innerHTML = `
                     <div class="legend-color" style="background-color: ${style.color}; 
-                         ${style.dashArray ? `border: 2px dashed ${style.color};` : ''}"></div>
+                         ${style.dashArray ? `border: 2px dashed ${style.color};` : ""}"></div>
                     <span>${alertType}</span>
                 `;
                 legendContainer.appendChild(legendItem);
@@ -673,13 +670,13 @@
                     <p><strong>Effective:</strong> ${new Date(properties.effective).toLocaleString()}</p>
                     <p><strong>Expires:</strong> ${new Date(properties.expires).toLocaleString()}</p>
                     <p>${properties.description}</p>
-                    ${properties.instruction ? `<p><a href="${properties.instruction}" target="_blank">Instructions</a></p>` : ''}
+                    ${properties.instruction ? `<p><a href="${properties.instruction}" target="_blank">Instructions</a></p>` : ""}
                 </div>
             `;
         }
 
         function showInfoPanel(properties, latlng) {
-            const infoPanel = document.getElementById('info-panel');
+            const infoPanel = document.getElementById("info-panel");
             infoPanel.innerHTML = `
                 <h3>${properties.event}</h3>
                 <p><strong>Area:</strong> ${properties.areaDesc}</p>
@@ -689,21 +686,20 @@
                 <p>${properties.headline || (properties.description || "").substring(0, 100)}...</p>
             `;
             const point = map.latLngToContainerPoint(latlng);
-            infoPanel.style.left = (point.x + 10) + 'px';
-            infoPanel.style.top = (point.y + 10) + 'px';
-            infoPanel.style.display = 'block';
+            infoPanel.style.left = (point.x + 10) + "px";
+            infoPanel.style.top = (point.y + 10) + "px";
+            infoPanel.style.display = "block";
         }
 
         function hideInfoPanel() {
-            document.getElementById('info-panel').style.display = 'none';
+            document.getElementById("info-panel").style.display = "none";
         }
 
         function checkUserInAlertArea() {
-            if (!userLocation || typeof userLocation.lat !== 'number' || typeof userLocation.lng !== 'number') {
-                console.error('Invalid user location:', userLocation);
+            if (!userLocation || typeof userLocation.lat !== "number" || typeof userLocation.lng !== "number") {
                 return;
             }
-            const banner = document.getElementById('alert-banner');
+            const banner = document.getElementById("alert-banner");
             let userInAlert = false;
             let highestSeverityAlert = null;
             for (const id in alertLayers) {
@@ -714,21 +710,19 @@
                             userInAlert = true;
                             const popupContent = layer.getPopup().getContent();
                             const parser = new DOMParser();
-                            const doc = parser.parseFromString(popupContent, 'text/html');
-                            const eventType = doc.querySelector('h3').textContent;
-                            const severity = doc.querySelector('p:nth-child(3)').textContent.replace('Severity: ', '');
+                            const doc = parser.parseFromString(popupContent, "text/html");
+                            const eventType = doc.querySelector("h3").textContent;
+                            const severity = doc.querySelector("p:nth-child(3)").textContent.replace("Severity: ", "");
                             if (!highestSeverityAlert) {
                                 highestSeverityAlert = {id, eventType, severity};
-                            } else if (severity === 'Extreme' && highestSeverityAlert.severity !== 'Extreme') {
+                            } else if (severity === "Extreme" && highestSeverityAlert.severity !== "Extreme") {
                                 highestSeverityAlert = {id, eventType, severity};
-                            } else if (severity === 'Severe' && highestSeverityAlert.severity !== 'Extreme' && 
-                                      highestSeverityAlert.severity !== 'Severe') {
+                            } else if (severity === "Severe" && highestSeverityAlert.severity !== "Extreme" && 
+                                      highestSeverityAlert.severity !== "Severe") {
                                 highestSeverityAlert = {id, eventType, severity};
                             }
                         }
-                    } catch (error) {
-                        console.error('Error checking if user is in alert area:', error);
-                    }
+                    } catch (error) {}
                 }
             }
             if (userInAlert && highestSeverityAlert) {
@@ -737,9 +731,9 @@
                     <strong>${alert.eventType}</strong> is in effect for your location. 
                     <a href="#" onclick="focusOnAlert('${alert.id}')">View details</a>
                 `;
-                banner.classList.add('active');
+                banner.classList.add("active");
             } else {
-                banner.classList.remove('active');
+                banner.classList.remove("active");
             }
         }
 
@@ -751,7 +745,7 @@
             }
         }
 
-        const style = document.createElement('style');
+        const style = document.createElement("style");
         style.textContent = `
             .pulsing-layer {
                 animation: pulse-animation 2s infinite;
