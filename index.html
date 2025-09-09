@@ -113,6 +113,10 @@
         let cwaLayer = null;
         let countyActiveLayer = null;
 
+        // ADDED: Layer for city points and alert polygons
+        let cityPointsLayer = null;
+        let alertPolygonLayer = null;
+
         const alertStyles = {
             "Tornado Warning": { color: "#ff0000", className: "pulsing-layer", severityRank: 1 },
             "Tornado Watch": { color: "#ffcc00", dashArray: "10, 10", fillOpacity: 0.3, severityRank: 2 },
@@ -335,6 +339,9 @@
                 map.removeLayer(countyOutlinesLayer);
                 countyOutlinesLayer = null;
             }
+            // ADDED: Remove city and alert polygon layers
+            if (cityPointsLayer) { cityPointsLayer.clearLayers(); map.removeLayer(cityPointsLayer); cityPointsLayer = null; }
+            if (alertPolygonLayer) { alertPolygonLayer.clearLayers(); map.removeLayer(alertPolygonLayer); alertPolygonLayer = null; }
             alertLayers = {};
             alertTypes = {};
             allAlerts = [];
@@ -373,6 +380,9 @@
                 map.removeLayer(countyOutlinesLayer);
                 countyOutlinesLayer = null;
             }
+            // ADDED: Remove city and alert polygon layers
+            if (cityPointsLayer) { cityPointsLayer.clearLayers(); map.removeLayer(cityPointsLayer); cityPointsLayer = null; }
+            if (alertPolygonLayer) { alertPolygonLayer.clearLayers(); map.removeLayer(alertPolygonLayer); alertPolygonLayer = null; }
             allAlerts.forEach(alert => {
                 const event = alert.properties.event;
                 alertTypes[event] = true;
@@ -500,6 +510,7 @@
             }
         }
 
+        // ADDITIVE: Enhanced renderActiveCountyView
         function renderActiveCountyView() {
             if (!countyFeatureCollection) return;
             countyOutlinesLayer = L.geoJSON(countyFeatureCollection, {
@@ -514,6 +525,9 @@
                 }
             }).addTo(map);
             let countyAlertsByFIPS = {};
+            let alertGeometries = []; // NEW - to store geometry polygons
+            let cityPoints = []; // NEW - to store city points
+
             allAlerts.forEach(alert => {
                 const properties = alert.properties;
                 const eventType = properties.event;
@@ -522,6 +536,53 @@
                 const filterCheckbox = document.getElementById("filter-" + eventType.replace(/\s+/g, "-"));
                 if (filterCheckbox && !filterCheckbox.checked) show = false;
                 if (!show) return;
+
+                // If alert has geometry, draw that
+                if (alert.geometry && (alert.geometry.type === "Polygon" || alert.geometry.type === "MultiPolygon")) {
+                    alertGeometries.push({
+                        geometry: alert.geometry,
+                        style: style,
+                        properties: properties
+                    });
+                }
+
+                // If alert mentions a city (areaDesc or headline, etc), try to get a point for it
+                let mentionCity = false;
+                let cityName = null;
+                if (properties.areaDesc && /city/i.test(properties.areaDesc)) {
+                    // Try to extract city name from areaDesc
+                    const match = properties.areaDesc.match(/([A-Za-z ]+ City)/i);
+                    if (match) {
+                        mentionCity = true;
+                        cityName = match[1];
+                    }
+                }
+                if (!mentionCity && properties.headline && /city/i.test(properties.headline)) {
+                    // Try to extract city name from headline
+                    const match2 = properties.headline.match(/([A-Za-z ]+ City)/i);
+                    if (match2) {
+                        mentionCity = true;
+                        cityName = match2[1];
+                    }
+                }
+                // If found a city name, geocode and add to cityPoints
+                if (mentionCity && cityName) {
+                    // Use Nominatim to get coordinates, asynchronously add marker
+                    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityName)}&countrycodes=us&limit=1`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data && data.length > 0) {
+                                cityPoints.push({
+                                    lat: parseFloat(data[0].lat),
+                                    lng: parseFloat(data[0].lon),
+                                    properties: properties
+                                });
+                                addCityPointsLayer(cityPoints); // Update city markers on the map
+                            }
+                        });
+                }
+
+                // County/zone association same as before
                 if (properties.geocode && properties.geocode.UGC && countyLookup) {
                     properties.geocode.UGC.forEach(ugcCode => {
                         if (ugcCode.length === 6) {
@@ -546,6 +607,30 @@
                     });
                 }
             });
+
+            // Draw alert polygons from geometry
+            if (alertGeometries.length > 0) {
+                alertPolygonLayer = L.layerGroup();
+                alertGeometries.forEach(item => {
+                    let layer;
+                    if (item.geometry.type === "Polygon") {
+                        const coordinates = item.geometry.coordinates[0];
+                        const latLngs = coordinates.map(coord => [coord[1], coord[0]]);
+                        layer = L.polygon(latLngs, item.style)
+                            .bindPopup(createPopupContent(item.properties));
+                    } else if (item.geometry.type === "MultiPolygon") {
+                        const polygons = item.geometry.coordinates.map(polygonCoords => {
+                            const latLngs = polygonCoords[0].map(coord => [coord[1], coord[0]]);
+                            return L.polygon(latLngs, item.style);
+                        });
+                        layer = L.featureGroup(polygons).bindPopup(createPopupContent(item.properties));
+                    }
+                    if (layer) { alertPolygonLayer.addLayer(layer); }
+                });
+                alertPolygonLayer.addTo(map);
+            }
+
+            // County boundary shading
             const countyAlertFeatures = [];
             for (const fips in countyAlertsByFIPS) {
                 const base = countyLookup[fips];
@@ -592,6 +677,10 @@
                     }
                 ).addTo(map);
             }
+
+            // Draw city points (run once if needed)
+            addCityPointsLayer(cityPoints);
+
             if (marineZonesFeatureCollection && marineZonesFeatureCollection.features.length > 0) {
                 marineZonesLayer = L.geoJSON(marineZonesFeatureCollection, {
                     style: {
@@ -616,6 +705,32 @@
                     }
                 }).addTo(map);
             }
+        }
+
+        // NEW: Add city points to the map as small circles
+        function addCityPointsLayer(cityPoints) {
+            if (cityPointsLayer) {
+                cityPointsLayer.clearLayers();
+                map.removeLayer(cityPointsLayer);
+                cityPointsLayer = null;
+            }
+            if (!cityPoints || cityPoints.length === 0) return;
+            cityPointsLayer = L.layerGroup();
+            cityPoints.forEach(pt => {
+                let circle = L.circleMarker([pt.lat, pt.lng], {
+                    radius: 6,
+                    color: "#444",
+                    fillColor: "#ffb700",
+                    fillOpacity: 0.95,
+                    weight: 2
+                });
+                if (pt.properties) {
+                    circle.bindPopup(createPopupContent(pt.properties));
+                    addLayerEventListeners(circle, pt.properties);
+                }
+                cityPointsLayer.addLayer(circle);
+            });
+            cityPointsLayer.addTo(map);
         }
 
         function addLayerEventListeners(layer, properties) {
