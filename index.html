@@ -165,6 +165,7 @@
         let cwaLookup = {};
         let countyLookup = {};
 
+        // State & territory abbreviations, including DC, PR, VI, GU, AS, MP
         const STATE_ABBRS = [
             "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
             "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC",
@@ -210,6 +211,7 @@
             setInterval(fetchWeatherData, 60000);
         });
 
+        // Load all county boundaries by fetching each state/territory GeoJSON and merging
         async function loadAllCountyBoundaries() {
             countyLookup = {};
             let features = [];
@@ -222,6 +224,7 @@
                         const geojson = await response.json();
                         if (geojson.features && Array.isArray(geojson.features)) {
                             for (const feature of geojson.features) {
+                                // FIPS code
                                 let fips = "";
                                 if (feature.properties) {
                                     if (feature.properties.GEOID) {
@@ -237,7 +240,9 @@
                         fetchCount++;
                         document.getElementById("progress-bar").style.width = `${Math.round((fetchCount / STATE_ABBRS.length) * 100)}%`;
                     }
-                } catch (error) {}
+                } catch (error) {
+                    // Ignore failed fetches for now (territories may be missing)
+                }
             }
             countyFeatureCollection = { type: "FeatureCollection", features };
         }
@@ -383,141 +388,6 @@
             if (userLocation) checkUserInAlertArea();
         }
 
-        function stateAbbrToFips(abbr) {
-            const stateFipsMap = {
-                "AL": "01","AK": "02","AZ": "04","AR": "05","CA": "06","CO": "08","CT": "09","DE": "10","FL": "12","GA": "13",
-                "HI": "15","ID": "16","IL": "17","IN": "18","IA": "19","KS": "20","KY": "21","LA": "22","ME": "23","MD": "24",
-                "MA": "25","MI": "26","MN": "27","MS": "28","MO": "29","MT": "30","NE": "31","NV": "32","NH": "33","NJ": "34",
-                "NM": "35","NY": "36","NC": "37","ND": "38","OH": "39","OK": "40","OR": "41","PA": "42","RI": "44","SC": "45",
-                "SD": "46","TN": "47","TX": "48","UT": "49","VT": "50","VA": "51","WA": "53","WV": "54","WI": "55","WY": "56",
-                "DC": "11","PR": "72","VI": "78","GU": "66","AS": "60","MP": "69"
-            };
-            return stateFipsMap[abbr] || "";
-        }
-
-        function renderActiveCountyView() {
-            if (!countyFeatureCollection) return;
-            countyOutlinesLayer = L.geoJSON(countyFeatureCollection, {
-                style: function() {
-                    return {
-                        color: "#888",
-                        weight: 1,
-                        fillColor: "#fff",
-                        fillOpacity: 0,
-                        className: "county-outline"
-                    };
-                }
-            }).addTo(map);
-
-            let countyAlertsByFIPS = {};
-            allAlerts.forEach(alert => {
-                const properties = alert.properties;
-                const eventType = properties.event;
-                const style = getAlertStyle(properties);
-                let show = true;
-                const filterCheckbox = document.getElementById("filter-" + eventType.replace(/\s+/g, "-"));
-                if (filterCheckbox && !filterCheckbox.checked) show = false;
-                if (!show) return;
-                let fipsList = [];
-                if (properties.geocode) {
-                    if (properties.geocode.FIPS) {
-                        fipsList = fipsList.concat(properties.geocode.FIPS);
-                    }
-                    if (properties.geocode.SAME) {
-                        fipsList = fipsList.concat(properties.geocode.SAME);
-                    }
-                    if (properties.geocode.UGC) {
-                        properties.geocode.UGC.forEach(ugc => {
-                            if (ugc.length === 6 && ugc[2] === 'C') {
-                                const stateAbbr = ugc.substring(0, 2);
-                                const countyFips = ugc.substring(3, 6);
-                                const fedFips = stateAbbrToFips(stateAbbr) + countyFips;
-                                fipsList.push(fedFips);
-                            }
-                        });
-                    }
-                }
-                fipsList.forEach(fipsCode => {
-                    if (!countyAlertsByFIPS[fipsCode]) countyAlertsByFIPS[fipsCode] = [];
-                    countyAlertsByFIPS[fipsCode].push({
-                        alert,
-                        style
-                    });
-                });
-            });
-
-            const countyAlertFeatures = [];
-            for (const fips in countyAlertsByFIPS) {
-                const base = countyLookup[fips];
-                if (base) {
-                    let highestSeverityIdx = 99;
-                    let mostSevereAlertObj = null;
-                    for (const alertObj of countyAlertsByFIPS[fips]) {
-                        const sRank = alertObj.style.severityRank !== undefined ? alertObj.style.severityRank : 99;
-                        if (sRank < highestSeverityIdx) {
-                            highestSeverityIdx = sRank;
-                            mostSevereAlertObj = alertObj;
-                        }
-                    }
-                    if (mostSevereAlertObj) {
-                        const feature = JSON.parse(JSON.stringify(base));
-                        feature.properties = feature.properties || {};
-                        feature.properties._alert = mostSevereAlertObj.alert;
-                        feature.properties._alertStyle = mostSevereAlertObj.style;
-                        countyAlertFeatures.push(feature);
-                    }
-                }
-            }
-            if (countyAlertFeatures.length > 0) {
-                countyActiveLayer = L.geoJSON(
-                    { type: "FeatureCollection", features: countyAlertFeatures },
-                    {
-                        style: function(f) {
-                            const s = f.properties._alertStyle || {};
-                            return {
-                                color: "#222",
-                                weight: 2,
-                                fillColor: s.color || "#fff",
-                                fillOpacity: (s.fillOpacity !== undefined ? s.fillOpacity : 0.7),
-                                className: "active-county " + (s.className || ""),
-                                dashArray: s.dashArray || null
-                            };
-                        },
-                        onEachFeature: function(feature, layer) {
-                            if (feature.properties && feature.properties._alert) {
-                                layer.bindPopup(createPopupContent(feature.properties._alert.properties));
-                                addLayerEventListeners(layer, feature.properties._alert.properties);
-                            }
-                        }
-                    }
-                ).addTo(map);
-            }
-            if (marineZonesFeatureCollection && marineZonesFeatureCollection.features.length > 0) {
-                marineZonesLayer = L.geoJSON(marineZonesFeatureCollection, {
-                    style: {
-                        color: "#11b6e8",
-                        weight: 1,
-                        fillColor: "#b6f1ff",
-                        fillOpacity: 0.09,
-                        opacity: 0.4,
-                        className: "marine-zone-outline"
-                    }
-                }).addTo(map);
-            }
-            if (cwaFeatureCollection && cwaFeatureCollection.features.length > 0) {
-                cwaLayer = L.geoJSON(cwaFeatureCollection, {
-                    style: {
-                        color: "#000",
-                        weight: 1,
-                        fillColor: "#fff",
-                        fillOpacity: 0,
-                        opacity: 0.13,
-                        className: "cwa-outline"
-                    }
-                }).addTo(map);
-            }
-        }
-
         function processAlertForView(alert, polygonMode = true) {
             const properties = alert.properties;
             const geometry = alert.geometry;
@@ -627,6 +497,124 @@
                 addLayerEventListeners(layer, properties);
                 alertLayers[properties.id] = layer;
                 layer.addTo(map);
+            }
+        }
+
+        function renderActiveCountyView() {
+            if (!countyFeatureCollection) return;
+            countyOutlinesLayer = L.geoJSON(countyFeatureCollection, {
+                style: function() {
+                    return {
+                        color: "#888",
+                        weight: 1,
+                        fillColor: "#fff",
+                        fillOpacity: 0,
+                        className: "county-outline"
+                    };
+                }
+            }).addTo(map);
+            let countyAlertsByFIPS = {};
+            allAlerts.forEach(alert => {
+                const properties = alert.properties;
+                const eventType = properties.event;
+                const style = getAlertStyle(properties);
+                let show = true;
+                const filterCheckbox = document.getElementById("filter-" + eventType.replace(/\s+/g, "-"));
+                if (filterCheckbox && !filterCheckbox.checked) show = false;
+                if (!show) return;
+                if (properties.geocode && properties.geocode.UGC && countyLookup) {
+                    properties.geocode.UGC.forEach(ugcCode => {
+                        if (ugcCode.length === 6) {
+                            const stateCode = ugcCode.substring(0, 2);
+                            const countyCode = ugcCode.substring(2);
+                            const fipsCode = stateCode + countyCode;
+                            if (!countyAlertsByFIPS[fipsCode]) countyAlertsByFIPS[fipsCode] = [];
+                            countyAlertsByFIPS[fipsCode].push({
+                                alert,
+                                style
+                            });
+                        }
+                    });
+                }
+                if (properties.geocode && properties.geocode.FIPS && countyLookup) {
+                    properties.geocode.FIPS.forEach(fipsCode => {
+                        if (!countyAlertsByFIPS[fipsCode]) countyAlertsByFIPS[fipsCode] = [];
+                        countyAlertsByFIPS[fipsCode].push({
+                            alert,
+                            style
+                        });
+                    });
+                }
+            });
+            const countyAlertFeatures = [];
+            for (const fips in countyAlertsByFIPS) {
+                const base = countyLookup[fips];
+                if (base) {
+                    let highestSeverityIdx = 99;
+                    let mostSevereAlertObj = null;
+                    for (const alertObj of countyAlertsByFIPS[fips]) {
+                        const sRank = alertObj.style.severityRank !== undefined ? alertObj.style.severityRank : 99;
+                        if (sRank < highestSeverityIdx) {
+                            highestSeverityIdx = sRank;
+                            mostSevereAlertObj = alertObj;
+                        }
+                    }
+                    if (mostSevereAlertObj) {
+                        const feature = JSON.parse(JSON.stringify(base));
+                        feature.properties = feature.properties || {};
+                        feature.properties._alert = mostSevereAlertObj.alert;
+                        feature.properties._alertStyle = mostSevereAlertObj.style;
+                        countyAlertFeatures.push(feature);
+                    }
+                }
+            }
+            if (countyAlertFeatures.length > 0) {
+                countyActiveLayer = L.geoJSON(
+                    { type: "FeatureCollection", features: countyAlertFeatures },
+                    {
+                        style: function(f) {
+                            const s = f.properties._alertStyle || {};
+                            return {
+                                color: "#222",
+                                weight: 2,
+                                fillColor: s.color || "#fff",
+                                fillOpacity: (s.fillOpacity !== undefined ? s.fillOpacity : 0.7),
+                                className: "active-county " + (s.className || ""),
+                                dashArray: s.dashArray || null
+                            };
+                        },
+                        onEachFeature: function(feature, layer) {
+                            if (feature.properties && feature.properties._alert) {
+                                layer.bindPopup(createPopupContent(feature.properties._alert.properties));
+                                addLayerEventListeners(layer, feature.properties._alert.properties);
+                            }
+                        }
+                    }
+                ).addTo(map);
+            }
+            if (marineZonesFeatureCollection && marineZonesFeatureCollection.features.length > 0) {
+                marineZonesLayer = L.geoJSON(marineZonesFeatureCollection, {
+                    style: {
+                        color: "#11b6e8",
+                        weight: 1,
+                        fillColor: "#b6f1ff",
+                        fillOpacity: 0.09,
+                        opacity: 0.4,
+                        className: "marine-zone-outline"
+                    }
+                }).addTo(map);
+            }
+            if (cwaFeatureCollection && cwaFeatureCollection.features.length > 0) {
+                cwaLayer = L.geoJSON(cwaFeatureCollection, {
+                    style: {
+                        color: "#000",
+                        weight: 1,
+                        fillColor: "#fff",
+                        fillOpacity: 0,
+                        opacity: 0.13,
+                        className: "cwa-outline"
+                    }
+                }).addTo(map);
             }
         }
 
