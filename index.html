@@ -5,12 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Severe Weather Tracker</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-    <link rel="icon" type="image/png" href="/public/assets/web_presence/icons/favicon-96x96.png" sizes="96x96" />
-    <link rel="icon" type="image/svg+xml" href="/public/assets/web_presence/icons/favicon.svg" />
-    <link rel="shortcut icon" href="/public/assets/web_presence/icons/favicon.ico" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/public/assets/web_presence/icons/apple-touch-icon.png" />
-    <meta name="apple-mobile-web-app-title" content="Severe WX" />
-    <link rel="manifest" href="/public/assets/web_presence/icons/site.webmanifest" />
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { display: flex; flex-direction: column; height: 100vh; background-color: #f0f2f5; }
@@ -209,7 +203,6 @@
                 document.getElementById("geoapify-count").textContent = geoapifyRequestCount;
             }
 
-            // Restore view mode from localStorage
             const savedViewMode = localStorage.getItem("weatherTrackerViewMode");
             if (savedViewMode) {
                 document.getElementById("view-mode").value = savedViewMode;
@@ -638,13 +631,25 @@
                         const coordinates = item.geometry.coordinates[0];
                         const latLngs = coordinates.map(coord => [coord[1], coord[0]]);
                         layer = L.polygon(latLngs, item.style)
-                            .bindPopup(createPopupContent(item.properties));
+                            .bindPopup(createCountyPopupContent(item.properties))
+                            .on("mouseover", function(e) {
+                                showSimpleInfoPanel(item.properties, e.latlng);
+                            })
+                            .on("mouseout", function() {
+                                hideInfoPanel();
+                            });
                     } else if (item.geometry.type === "MultiPolygon") {
                         const polygons = item.geometry.coordinates.map(polygonCoords => {
                             const latLngs = polygonCoords[0].map(coord => [coord[1], coord[0]]);
-                            return L.polygon(latLngs, item.style);
+                            return L.polygon(latLngs, item.style)
+                                .on("mouseover", function(e) {
+                                    showSimpleInfoPanel(item.properties, e.latlng);
+                                })
+                                .on("mouseout", function() {
+                                    hideInfoPanel();
+                                });
                         });
-                        layer = L.featureGroup(polygons).bindPopup(createPopupContent(item.properties));
+                        layer = L.featureGroup(polygons).bindPopup(createCountyPopupContent(item.properties));
                     }
                     if (layer) { alertPolygonLayer.addLayer(layer); }
                 });
@@ -662,13 +667,25 @@
                         if (geometry.type === "Polygon") {
                             const coordinates = geometry.coordinates[0];
                             const latLngs = coordinates.map(coord => [coord[1], coord[0]]);
-                            layer = L.polygon(latLngs, style).bindPopup(createPopupContent(properties));
+                            layer = L.polygon(latLngs, style).bindPopup(createCountyPopupContent(properties))
+                                .on("mouseover", function(e) {
+                                    showSimpleInfoPanel(properties, e.latlng);
+                                })
+                                .on("mouseout", function() {
+                                    hideInfoPanel();
+                                });
                         } else if (geometry.type === "MultiPolygon") {
                             const polygons = geometry.coordinates.map(polygonCoords => {
                                 const latLngs = polygonCoords[0].map(coord => [coord[1], coord[0]]);
-                                return L.polygon(latLngs, style);
+                                return L.polygon(latLngs, style)
+                                    .on("mouseover", function(e) {
+                                        showSimpleInfoPanel(properties, e.latlng);
+                                    })
+                                    .on("mouseout", function() {
+                                        hideInfoPanel();
+                                    });
                             });
-                            layer = L.featureGroup(polygons).bindPopup(createPopupContent(properties));
+                            layer = L.featureGroup(polygons).bindPopup(createCountyPopupContent(properties));
                         }
                         if (layer) { affectedZoneLayer.addLayer(layer); }
                     });
@@ -715,7 +732,13 @@
                         },
                         onEachFeature: function(feature, layer) {
                             if (feature.properties && feature.properties._alert) {
-                                layer.bindPopup(createPopupContent(feature.properties._alert.properties));
+                                layer.bindPopup(createCountyPopupContent(feature.properties._alert.properties));
+                                layer.on("mouseover", function(e) {
+                                    showSimpleInfoPanel(feature.properties._alert.properties, e.latlng);
+                                });
+                                layer.on("mouseout", function() {
+                                    hideInfoPanel();
+                                });
                                 addLayerEventListeners(layer, feature.properties._alert.properties);
                             }
                         }
@@ -768,7 +791,13 @@
                     weight: 2
                 });
                 if (pt.properties) {
-                    circle.bindPopup(createPopupContent(pt.properties));
+                    circle.bindPopup(createCountyPopupContent(pt.properties));
+                    circle.on("mouseover", function(e) {
+                        showSimpleInfoPanel(pt.properties, e.latlng);
+                    });
+                    circle.on("mouseout", function() {
+                        hideInfoPanel();
+                    });
                     addLayerEventListeners(circle, pt.properties);
                 }
                 cityPointsLayer.addLayer(circle);
@@ -778,11 +807,7 @@
 
         function addLayerEventListeners(layer, properties) {
             layer.on("mouseover", function(e) {
-                if (e.layer && e.layer.getLatLng) {
-                    showInfoPanel(properties, e.layer.getLatLng());
-                } else if (e.latlng) {
-                    showInfoPanel(properties, e.latlng);
-                }
+                showSimpleInfoPanel(properties, e.latlng);
             });
             layer.on("mouseout", function() {
                 hideInfoPanel();
@@ -819,6 +844,36 @@
             renderAlerts();
         }
 
+        function createCountyPopupContent(properties) {
+            return `
+                <div>
+                    <h3>${properties.event || ""}</h3>
+                    <p><strong>Start:</strong> ${properties.effective ? new Date(properties.effective).toLocaleString() : "-"}</p>
+                    <p><strong>End:</strong> ${properties.expires ? new Date(properties.expires).toLocaleString() : "-"}</p>
+                    <p><strong>Severity:</strong> ${properties.severity || "-"}</p>
+                    <p><strong>Confidence:</strong> ${properties.certainty || "-"}</p>
+                    <p><strong>Details:</strong> ${properties.headline || (properties.description ? properties.description.substring(0, 100) + "..." : "-")}</p>
+                    <p><strong>Instructions:</strong> ${properties.instruction || "-"}</p>
+                    <p><strong>Issuer:</strong> ${properties.senderName || "-"}</p>
+                </div>
+            `;
+        }
+
+        function showSimpleInfoPanel(properties, latlng) {
+            const infoPanel = document.getElementById("info-panel");
+            infoPanel.innerHTML = `
+                <h3>${properties.event || ""}</h3>
+                <p><strong>Start:</strong> ${properties.effective ? new Date(properties.effective).toLocaleString() : "-"}</p>
+                <p><strong>End:</strong> ${properties.expires ? new Date(properties.expires).toLocaleString() : "-"}</p>
+                <p><strong>Severity:</strong> ${properties.severity || "-"}</p>
+                <p><strong>Confidence:</strong> ${properties.certainty || "-"}</p>
+            `;
+            const point = map.latLngToContainerPoint(latlng);
+            infoPanel.style.left = (point.x + 10) + "px";
+            infoPanel.style.top = (point.y + 10) + "px";
+            infoPanel.style.display = "block";
+        }
+
         function createPopupContent(properties) {
             return `
                 <div>
@@ -834,19 +889,7 @@
         }
 
         function showInfoPanel(properties, latlng) {
-            const infoPanel = document.getElementById("info-panel");
-            infoPanel.innerHTML = `
-                <h3>${properties.event}</h3>
-                <p><strong>Area:</strong> ${properties.areaDesc}</p>
-                <p><strong>Severity:</strong> ${properties.severity}</p>
-                <p><strong>Effective:</strong> ${new Date(properties.effective).toLocaleString()}</p>
-                <p><strong>Expires:</strong> ${new Date(properties.expires).toLocaleString()}</p>
-                <p>${properties.headline || (properties.description || "").substring(0, 100)}...</p>
-            `;
-            const point = map.latLngToContainerPoint(latlng);
-            infoPanel.style.left = (point.x + 10) + "px";
-            infoPanel.style.top = (point.y + 10) + "px";
-            infoPanel.style.display = "block";
+            showSimpleInfoPanel(properties, latlng);
         }
 
         function hideInfoPanel() {
