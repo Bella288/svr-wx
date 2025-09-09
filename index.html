@@ -90,6 +90,28 @@
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="https://unpkg.com/topojson@3"></script>
     <script>
+        const IMPORTANT_ALERT_TYPES = [
+            "Tornado Warning",
+            "Tornado Watch",
+            "Tornado Emergency",
+            "Flood Warning",
+            "Flood Watch",
+            "Flood Advisory",
+            "Flash Flood Warning",
+            "Flash Flood Watch",
+            "Flash Flood Statement",
+            "Hurricane Warning",
+            "Hurricane Watch",
+            "Tropical Storm Warning",
+            "Tropical Storm Watch",
+            "Tsunami Warning",
+            "Tsunami Watch",
+            "Tsunami Advisory",
+            "Tsunami Information Statement",
+            "Earthquake Warning",
+            "Earthquake Advisory",
+            "Earthquake Watch"
+        ];
         const map = L.map('map', { zoomSnap: 0.1, preferCanvas: true }).setView([39.8283, -98.5795], 4);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -125,6 +147,8 @@
             "Flood Advisory": { color: "#ffff00", dashArray: "10, 10", fillOpacity: 0.3, severityRank: 5 },
             "Flood Watch": { color: "#aaff00", dashArray: "10, 10", fillOpacity: 0.3, severityRank: 4 },
             "Flood Warning": { color: "#007700", className: "pulsing-layer", severityRank: 2 },
+            "Flash Flood Watch": { color: "#aaff00", dashArray: "10, 10", fillOpacity: 0.3, severityRank: 4 },
+            "Flash Flood Statement": { color: "#bbff99", dashArray: "5, 5", fillOpacity: 0.2, severityRank: 6 },
             "Coastal Flood Advisory": { color: "#77aaff", dashArray: "10, 10", fillOpacity: 0.3, severityRank: 5 },
             "Coastal Flood Warning": { color: "#0055ff", className: "pulsing-layer", severityRank: 2 },
             "Coastal Flood Statement": { color: "#aaccff", dashArray: "5, 5", fillOpacity: 0.2, severityRank: 6 },
@@ -145,23 +169,13 @@
             "Tropical Storm Watch": { color: "#00ffee", dashArray: "10, 10", fillOpacity: 0.3, severityRank: 3 },
             "Hurricane Warning": { color: "#ff0000", className: "pulsing-layer", severityRank: 0 },
             "Hurricane Watch": { color: "#ff8888", dashArray: "10, 10", fillOpacity: 0.3, severityRank: 2 },
-            "Heat Advisory": { color: "#ff5500", dashArray: "5, 5", fillOpacity: 0.3, severityRank: 3 },
-            "Excessive Heat Warning": { color: "#ff0000", className: "pulsing-layer", severityRank: 1 },
-            "Dense Fog Advisory": { color: "#aaaaaa", dashArray: "5, 5", fillOpacity: 0.3, severityRank: 6 },
-            "Dense Smoke Advisory": { color: "#666666", dashArray: "5, 5", fillOpacity: 0.3, severityRank: 6 },
-            "Air Quality Alert": { color: "#aa66aa", dashArray: "5, 5", fillOpacity: 0.3, severityRank: 7 },
-            "Rip Current Statement": { color: "#00ccff", dashArray: "5, 5", fillOpacity: 0.3, severityRank: 8 },
-            "Beach Hazards Statement": { color: "#00aacc", dashArray: "5, 5", fillOpacity: 0.3, severityRank: 8 },
-            "Lake Wind Advisory": { color: "#55aaff", dashArray: "5, 5", fillOpacity: 0.3, severityRank: 6 },
-            "Frost Advisory": { color: "#ccffff", dashArray: "5, 5", fillOpacity: 0.3, severityRank: 5 },
-            "Freeze Warning": { color: "#00ffff", className: "pulsing-layer", severityRank: 2 },
-            "Freeze Watch": { color: "#00cccc", dashArray: "10, 10", fillOpacity: 0.3, severityRank: 4 },
-            "Ashfall Advisory": { color: "#888888", dashArray: "5, 5", fillOpacity: 0.3, severityRank: 6 },
-            "Dust Storm Warning": { color: "#ccaa00", className: "pulsing-layer", severityRank: 1 },
-            "Dust Storm Advisory": { color: "#ccbb77", dashArray: "5, 5", fillOpacity: 0.3, severityRank: 5 },
-            "Snow Squall Warning": { color: "#ffffff", className: "pulsing-layer", severityRank: 1 },
-            "Extreme Wind Warning": { color: "#ff00ff", className: "pulsing-layer", severityRank: 0 },
-            "Special Marine Warning": { color: "#ff5555", className: "pulsing-layer", severityRank: 1 },
+            "Tsunami Warning": { color: "#0033ff", className: "pulsing-layer", severityRank: 1 },
+            "Tsunami Watch": { color: "#66ccff", dashArray: "10, 10", fillOpacity: 0.3, severityRank: 2 },
+            "Tsunami Advisory": { color: "#b3d9ff", dashArray: "5, 5", fillOpacity: 0.2, severityRank: 4 },
+            "Tsunami Information Statement": { color: "#b3d9ff", dashArray: "5, 5", fillOpacity: 0.2, severityRank: 5 },
+            "Earthquake Warning": { color: "#ec7c07", className: "pulsing-layer", severityRank: 1 },
+            "Earthquake Advisory": { color: "#f2b134", dashArray: "5,5", fillOpacity: 0.3, severityRank: 2 },
+            "Earthquake Watch": { color: "#f2b134", dashArray: "10,10", fillOpacity: 0.3, severityRank: 3 },
             "_default": { color: "#5555ff", fillOpacity: 0.3, severityRank: 99 }
         };
 
@@ -819,7 +833,12 @@
             const legendContainer = document.getElementById("legend-items");
             filtersContainer.innerHTML = "";
             legendContainer.innerHTML = "";
-            Object.keys(alertTypes).sort().forEach(alertType => {
+
+            let allImportantTypes = {};
+            IMPORTANT_ALERT_TYPES.forEach(type => allImportantTypes[type] = true);
+            let allTypes = Object.assign({}, alertTypes, allImportantTypes);
+
+            Object.keys(allTypes).sort().forEach(alertType => {
                 const style = getAlertStyle({ event: alertType });
                 const filterDiv = document.createElement("div");
                 filterDiv.className = "filter-checkbox";
