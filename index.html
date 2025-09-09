@@ -242,46 +242,9 @@
             countyFeatureCollection = { type: "FeatureCollection", features };
         }
 
-        async function loadMarineZones() {
-            try {
-                const url = "https://raw.githubusercontent.com/Bella288/svr-wx-data/main/marine_zones_us.geojson";
-                const resp = await fetch(url);
-                marineZonesGeojson = await resp.json();
-                marineZonesFeatureCollection = marineZonesGeojson;
-                marineZoneLookup = {};
-                if (marineZonesFeatureCollection && marineZonesFeatureCollection.features) {
-                    marineZonesFeatureCollection.features.forEach(f => {
-                        if (f.properties && f.properties.ZONE) {
-                            marineZoneLookup[f.properties.ZONE] = f;
-                        }
-                    });
-                }
-            } catch (error) {
-                marineZonesGeojson = { type: "FeatureCollection", features: [] };
-                marineZoneLookup = {};
-            }
-        }
+        
 
-        async function loadCWABoundaries() {
-            try {
-                const url = "https://raw.githubusercontent.com/Bella288/svr-wx-data/main/nws_cwa.geojson";
-                const resp = await fetch(url);
-                cwaGeojson = await resp.json();
-                cwaFeatureCollection = cwaGeojson;
-                cwaLookup = {};
-                if (cwaFeatureCollection && cwaFeatureCollection.features) {
-                    cwaFeatureCollection.features.forEach(f => {
-                        if (f.properties && f.properties.CWA) {
-                            cwaLookup[f.properties.CWA] = f;
-                        }
-                    });
-                }
-            } catch (error) {
-                cwaGeojson = { type: "FeatureCollection", features: [] };
-                cwaLookup = {};
-            }
-        }
-
+        
         function saveAddress() {
             const address = document.getElementById("address-input").value;
             if (address.trim() !== "") {
