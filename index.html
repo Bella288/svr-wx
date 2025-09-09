@@ -42,6 +42,15 @@
         .inactive-county { fill: #fff; fill-opacity: 0.7; opacity: 0.6; pointer-events: none; }
         .active-county { fill-opacity: 0.7; opacity: 1; pointer-events: auto; }
         .marine-zone-outline { color: #11b6e8; weight: 1.3; fill: #b6f1ff; fill-opacity: 0.18; opacity: 0.8; pointer-events: none; }
+        .alert-instructions-link {
+            color: #3498db;
+            text-decoration: underline;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .alert-instructions-link:hover {
+            color: #1d6fa5;
+        }
     </style>
 </head>
 <body>
@@ -540,6 +549,76 @@
             }
         }
 
+        function createPopupContent(properties) {
+            return `
+                <div>
+                    <h3>${properties.event}</h3>
+                    <p><strong>Area:</strong> ${properties.areaDesc}</p>
+                    <p><strong>Severity:</strong> ${properties.severity}</p>
+                    <p><strong>Effective:</strong> ${new Date(properties.effective).toLocaleString()}</p>
+                    <p><strong>Expires:</strong> ${new Date(properties.expires).toLocaleString()}</p>
+                    <p>${properties.description}</p>
+                    ${properties.instruction ? `<p><span class="alert-instructions-link" onclick="redirectToAlertDetails(this)">Instructions</span></p>` : ""}
+                </div>
+            `;
+        }
+
+        function redirectToAlertDetails(el) {
+            let popupDiv = el.closest("div");
+            let h3 = popupDiv.querySelector("h3");
+            let event = h3 ? h3.textContent : "";
+            let found = null;
+            if (allAlerts && allAlerts.length) {
+                for (const alert of allAlerts) {
+                    const p = alert.properties;
+                    if (
+                        p &&
+                        ((p.event && p.event === event) || event === "") &&
+                        (!p.areaDesc || popupDiv.innerHTML.includes(p.areaDesc)) &&
+                        (!p.effective || popupDiv.innerHTML.includes(new Date(p.effective).toLocaleString()))
+                    ) {
+                        found = p;
+                        break;
+                    }
+                }
+            }
+            if (!found) {
+                const pTags = popupDiv.querySelectorAll("p");
+                let area = pTags[0] ? (pTags[0].textContent.replace(/^Area:\s*/, "") || "") : "";
+                let effective = pTags[2] ? (pTags[2].textContent.replace(/^Effective:\s*/, "") || "") : "";
+                let expires = pTags[3] ? (pTags[3].textContent.replace(/^Expires:\s*/, "") || "") : "";
+                let description = pTags[4] ? (pTags[4].textContent || "") : "";
+                found = {
+                    event: event,
+                    areaDesc: area,
+                    effective: effective,
+                    expires: expires,
+                    description: description
+                }
+            }
+            let alertToSend = {
+                event: found.event || "",
+                effective: found.effective || "",
+                expires: found.expires || "",
+                senderName: found.senderName || "",
+                issuer: found.issuer || "",
+                severity: found.severity || "",
+                certainty: found.certainty || "",
+                likelihood: found.likelihood || "",
+                areaDesc: found.areaDesc || "",
+                where: found.where || "",
+                parameters: found.parameters || {},
+                movement: (found.parameters && found.parameters.movement) || found.movement || "",
+                instruction: found.instruction || "",
+                description: found.description || "",
+                headline: found.headline || "",
+            };
+            try {
+                sessionStorage.setItem("selectedAlert", JSON.stringify(alertToSend));
+            } catch (e) {}
+            window.location.href = "/alert-details.html";
+        }
+
         function renderActiveCountyView() {
             if (!countyFeatureCollection) return;
             countyOutlinesLayer = L.geoJSON(countyFeatureCollection, {
@@ -872,7 +951,7 @@
                     <p><strong>Severity:</strong> ${properties.severity || "-"}</p>
                     <p><strong>Confidence:</strong> ${properties.certainty || "-"}</p>
                     <p><strong>Details:</strong> ${properties.headline || (properties.description ? properties.description.substring(0, 100) + "..." : "-")}</p>
-                    <p><strong>Instructions:</strong> ${properties.instruction || "-"}</p>
+                    <p><strong>Instructions:</strong> ${properties.instruction ? `<span class="alert-instructions-link" onclick="redirectToAlertDetails(this)">Instructions</span>` : "-"}</p>
                     <p><strong>Issuer:</strong> ${properties.senderName || "-"}</p>
                 </div>
             `;
@@ -891,20 +970,6 @@
             infoPanel.style.left = (point.x + 10) + "px";
             infoPanel.style.top = (point.y + 10) + "px";
             infoPanel.style.display = "block";
-        }
-
-        function createPopupContent(properties) {
-            return `
-                <div>
-                    <h3>${properties.event}</h3>
-                    <p><strong>Area:</strong> ${properties.areaDesc}</p>
-                    <p><strong>Severity:</strong> ${properties.severity}</p>
-                    <p><strong>Effective:</strong> ${new Date(properties.effective).toLocaleString()}</p>
-                    <p><strong>Expires:</strong> ${new Date(properties.expires).toLocaleString()}</p>
-                    <p>${properties.description}</p>
-                    ${properties.instruction ? `<p><a href="${properties.instruction}" target="_blank">Instructions</a></p>` : ""}
-                </div>
-            `;
         }
 
         function showInfoPanel(properties, latlng) {
