@@ -563,6 +563,21 @@
             `;
         }
 
+        function createCountyPopupContent(properties) {
+            return `
+                <div>
+                    <h3>${properties.event || ""}</h3>
+                    <p><strong>Start:</strong> ${properties.effective ? new Date(properties.effective).toLocaleString() : "-"}</p>
+                    <p><strong>End:</strong> ${properties.expires ? new Date(properties.expires).toLocaleString() : "-"}</p>
+                    <p><strong>Severity:</strong> ${properties.severity || "-"}</p>
+                    <p><strong>Confidence:</strong> ${properties.certainty || "-"}</p>
+                    <p><strong>Details:</strong> ${properties.headline || (properties.description ? properties.description.substring(0, 100) + "..." : "-")}</p>
+                    <p><strong>Instructions:</strong> ${properties.instruction ? `<span class="alert-instructions-link" onclick="redirectToAlertDetails(this)">Instructions</span>` : "-"}</p>
+                    <p><strong>Issuer:</strong> ${properties.senderName || "-"}</p>
+                </div>
+            `;
+        }
+
         function redirectToAlertDetails(el) {
             let popupDiv = el.closest("div");
             let h3 = popupDiv.querySelector("h3");
@@ -940,21 +955,6 @@
 
         window.toggleAlertType = function(alertType) {
             renderAlerts();
-        }
-
-        function createCountyPopupContent(properties) {
-            return `
-                <div>
-                    <h3>${properties.event || ""}</h3>
-                    <p><strong>Start:</strong> ${properties.effective ? new Date(properties.effective).toLocaleString() : "-"}</p>
-                    <p><strong>End:</strong> ${properties.expires ? new Date(properties.expires).toLocaleString() : "-"}</p>
-                    <p><strong>Severity:</strong> ${properties.severity || "-"}</p>
-                    <p><strong>Confidence:</strong> ${properties.certainty || "-"}</p>
-                    <p><strong>Details:</strong> ${properties.headline || (properties.description ? properties.description.substring(0, 100) + "..." : "-")}</p>
-                    <p><strong>Instructions:</strong> ${properties.instruction ? `<span class="alert-instructions-link" onclick="redirectToAlertDetails(this)">Instructions</span>` : "-"}</p>
-                    <p><strong>Issuer:</strong> ${properties.senderName || "-"}</p>
-                </div>
-            `;
         }
 
         function showSimpleInfoPanel(properties, latlng) {
