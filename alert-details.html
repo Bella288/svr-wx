@@ -14,7 +14,7 @@
             min-height: 100vh;
         }
         .container {
-            max-width: 600px;
+            max-width: 800px;
             margin: 2rem auto;
             background: #fff;
             border-radius: 12px;
@@ -25,11 +25,16 @@
             color: #2c3e50;
             font-size: 2rem;
             margin-bottom: 1rem;
+            border-bottom: 2px solid #e1e8ed;
+            padding-bottom: 0.5rem;
         }
         .meta {
             margin: 1.5rem 0 1rem 0;
             font-size: 1.05rem;
             color: #34495e;
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 0.5rem 1rem;
         }
         .section-label {
             color: #4a6491;
@@ -37,6 +42,7 @@
             margin-top: 1.5rem;
             margin-bottom: 0.2rem;
             font-size: 1.1rem;
+            display: block;
         }
         .instructions {
             background: #f8fafc;
@@ -45,6 +51,25 @@
             border-left: 4px solid #3498db;
             margin: 0.4rem 0 1rem 0;
             color: #222;
+            line-height: 1.5;
+        }
+        .impact-box {
+            background: #fff4f4;
+            padding: 1rem;
+            border-radius: 7px;
+            border-left: 4px solid #e74c3c;
+            margin: 0.4rem 0 1rem 0;
+            color: #222;
+            line-height: 1.5;
+        }
+        .what-box {
+            background: #f0f9ff;
+            padding: 1rem;
+            border-radius: 7px;
+            border-left: 4px solid #3498db;
+            margin: 0.4rem 0 1rem 0;
+            color: #222;
+            line-height: 1.5;
         }
         .back-link {
             display: inline-block;
@@ -54,12 +79,10 @@
             font-weight: bold;
             border-bottom: 1px dashed #3498db;
             transition: color 0.2s;
+            padding: 0.5rem 0;
         }
         .back-link:hover {
             color: #1d6fa5;
-        }
-        .details-section .section-label {
-            margin-top: 0.5rem;
         }
         .details-section {
             margin-bottom: 1rem;
@@ -68,48 +91,112 @@
             color: #7b8794;
             font-weight: bold;
             margin-right: 0.4rem;
+            white-space: nowrap;
         }
         .value {
             color: #222;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+        @media (max-width: 650px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            .meta {
+                grid-template-columns: 1fr;
+            }
+        }
+        .urgency-indicator {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+        .urgency-extreme {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .urgency-severe {
+            background-color: #e67e22;
+            color: white;
+        }
+        .urgency-moderate {
+            background-color: #f39c12;
+            color: white;
+        }
+        .urgency-minor {
+            background-color: #3498db;
+            color: white;
+        }
+        .urgency-unknown {
+            background-color: #95a5a6;
+            color: white;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1 id="alert-title">Alert Details</h1>
-        <div class="meta details-section">
-            <span class="label">Start:</span><span class="value" id="alert-start">-</span><br>
-            <span class="label">End:</span><span class="value" id="alert-end">-</span>
-        </div>
-        <div class="details-section">
-            <span class="section-label">Issued by:</span>
+        
+        <div class="meta">
+            <span class="label">Start:</span>
+            <span class="value" id="alert-start">-</span>
+            
+            <span class="label">End:</span>
+            <span class="value" id="alert-end">-</span>
+            
+            <span class="label">Issued by:</span>
             <span class="value" id="alert-issuer">-</span>
         </div>
-        <div class="details-section">
-            <span class="section-label">Severity:</span>
-            <span class="value" id="alert-severity">-</span>
+        
+        <div class="grid-2">
+            <div class="details-section">
+                <span class="section-label">Severity:</span>
+                <span class="value" id="alert-severity">-</span>
+            </div>
+            
+            <div class="details-section">
+                <span class="section-label">Likelihood:</span>
+                <span class="value" id="alert-likelihood">-</span>
+            </div>
         </div>
-        <div class="details-section">
-            <span class="section-label">Likelihood:</span>
-            <span class="value" id="alert-likelihood">-</span>
-        </div>
+        
         <div class="details-section">
             <span class="section-label">Where:</span>
             <span class="value" id="alert-where">-</span>
         </div>
+        
         <div class="details-section">
             <span class="section-label">Movement:</span>
             <span class="value" id="alert-movement">-</span>
         </div>
+        
+        <div class="details-section">
+            <span class="section-label">What:</span>
+            <div class="what-box" id="alert-what">-</div>
+        </div>
+        
+        <div class="details-section">
+            <span class="section-label">Impact:</span>
+            <div class="impact-box" id="alert-impact">-</div>
+        </div>
+        
         <div class="details-section">
             <span class="section-label">Details:</span>
             <div class="instructions" id="alert-details">-</div>
         </div>
+        
         <div class="details-section">
             <span class="section-label">Instructions:</span>
             <div class="instructions" id="alert-instructions">-</div>
         </div>
-        <a class="back-link" href="javascript:window.history.back()">← Back</a>
+        
+        <a class="back-link" href="javascript:window.history.back()">← Back to Map</a>
     </div>
     <script>
         function fromQueryString(qs) {
@@ -134,9 +221,31 @@
             if (!str) return "-";
             return str.replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
+        
+        function getUrgencyClass(severity) {
+            if (!severity) return "urgency-unknown";
+            severity = severity.toLowerCase();
+            
+            if (severity.includes("extreme")) return "urgency-extreme";
+            if (severity.includes("severe")) return "urgency-severe";
+            if (severity.includes("moderate")) return "urgency-moderate";
+            if (severity.includes("minor")) return "urgency-minor";
+            return "urgency-unknown";
+        }
 
         function renderAlertDetails(alert) {
+            // Set title
             document.getElementById("alert-title").textContent = safe(alert.event || "Alert Details");
+            
+            // Add urgency indicator to title if we have severity info
+            if (alert.severity) {
+                const urgencySpan = document.createElement("span");
+                urgencySpan.className = `urgency-indicator ${getUrgencyClass(alert.severity)}`;
+                urgencySpan.textContent = alert.severity;
+                document.getElementById("alert-title").appendChild(urgencySpan);
+            }
+            
+            // Set basic info
             document.getElementById("alert-start").textContent = parseDate(alert.effective);
             document.getElementById("alert-end").textContent = parseDate(alert.expires);
             document.getElementById("alert-issuer").textContent = safe(alert.senderName || alert.issuer || "-");
@@ -144,8 +253,14 @@
             document.getElementById("alert-likelihood").textContent = safe(alert.certainty || alert.likelihood || "-");
             document.getElementById("alert-where").textContent = safe(alert.areaDesc || alert.where || "-");
             document.getElementById("alert-movement").textContent = safe(alert.movement || (alert.parameters && alert.parameters.movement) || "-");
-            document.getElementById("alert-details").innerHTML = safe(alert.description || alert.headline || "-").replace(/\n/g, "<br>");
-            document.getElementById("alert-instructions").innerHTML = safe(alert.instruction || "-").replace(/\n/g, "<br>");
+            
+            // Set the new fields
+            document.getElementById("alert-what").innerHTML = safe(alert.what || "No 'What' information available.").replace(/\n/g, "<br>");
+            document.getElementById("alert-impact").innerHTML = safe(alert.impact || "No impact information available.").replace(/\n/g, "<br>");
+            
+            // Set description and instructions
+            document.getElementById("alert-details").innerHTML = safe(alert.description || alert.headline || "No details available.").replace(/\n/g, "<br>");
+            document.getElementById("alert-instructions").innerHTML = safe(alert.instruction || "No specific instructions provided.").replace(/\n/g, "<br>");
         }
 
         // 1. From localStorage or sessionStorage (preferred, if set by previous page)
@@ -154,17 +269,26 @@
         try {
             const local = window.sessionStorage.getItem("selectedAlert") || window.localStorage.getItem("selectedAlert");
             if (local) alertObj = JSON.parse(local);
-        } catch (e) {}
+        } catch (e) {
+            console.error("Error parsing alert data:", e);
+        }
+        
         if (!alertObj) {
             const params = fromQueryString(window.location.search);
             if (params.alert) {
-                try { alertObj = JSON.parse(decodeURIComponent(params.alert)); } catch (e) {}
+                try { 
+                    alertObj = JSON.parse(decodeURIComponent(params.alert)); 
+                } catch (e) {
+                    console.error("Error parsing alert from query string:", e);
+                }
             }
         }
+        
         if (alertObj) {
             renderAlertDetails(alertObj);
         } else {
             document.getElementById("alert-title").textContent = "Alert not found";
+            document.getElementById("alert-details").innerHTML = "The alert details could not be loaded. Please go back to the map and try again.";
         }
     </script>
 </body>
