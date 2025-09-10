@@ -653,13 +653,13 @@
                     };
                 }
             }).addTo(map);
-        
+
             let countyAlertsByFIPS = {};
             let alertGeometries = [];
             let cityPoints = [];
             let affectedZoneGeometriesPromises = [];
             let affectedZoneProps = [];
-        
+
             allAlerts.forEach(alert => {
                 const properties = alert.properties;
                 const eventType = properties.event;
@@ -668,7 +668,7 @@
                 const filterCheckbox = document.getElementById("filter-" + eventType.replace(/\s+/g, "-"));
                 if (filterCheckbox && !filterCheckbox.checked) show = false;
                 if (!show) return;
-        
+
                 if (alert.geometry && (alert.geometry.type === "Polygon" || alert.geometry.type === "MultiPolygon")) {
                     alertGeometries.push({
                         geometry: alert.geometry,
@@ -736,7 +736,7 @@
                     });
                 }
             });
-        
+
             if (alertGeometries.length > 0) {
                 alertPolygonLayer = L.layerGroup();
                 alertGeometries.forEach(item => {
@@ -769,7 +769,7 @@
                 });
                 alertPolygonLayer.addTo(map);
             }
-        
+
             if (affectedZoneGeometriesPromises.length > 0) {
                 Promise.all(affectedZoneGeometriesPromises).then(geoms => {
                     affectedZoneLayer = L.layerGroup();
@@ -806,7 +806,7 @@
                     affectedZoneLayer.addTo(map);
                 });
             }
-        
+
             const countyAlertFeatures = [];
             for (const fips in countyAlertsByFIPS) {
                 const base = countyLookup[fips];
@@ -859,9 +859,9 @@
                     }
                 ).addTo(map);
             }
-        
+
             addCityPointsLayer(cityPoints);
-        
+
             if (marineZonesFeatureCollection && marineZonesFeatureCollection.features.length > 0) {
                 marineZonesLayer = L.geoJSON(marineZonesFeatureCollection, {
                     style: {
@@ -887,34 +887,6 @@
                 }).addTo(map);
             }
         }
-
-            addCityPointsLayer(cityPoints);
-
-            if (marineZonesFeatureCollection && marineZonesFeatureCollection.features.length > 0) {
-                marineZonesLayer = L.geoJSON(marineZonesFeatureCollection, {
-                    style: {
-                        color: "#11b6e8",
-                        weight: 1,
-                        fillColor: "#b6f1ff",
-                        fillOpacity: 0.09,
-                        opacity: 0.4,
-                        className: "marine-zone-outline"
-                    }
-                }).addTo(map);
-            }
-            if (cwaFeatureCollection && cwaFeatureCollection.features.length > 0) {
-                cwaLayer = L.geoJSON(cwaFeatureCollection, {
-                    style: {
-                        color: "#000",
-                        weight: 1,
-                        fillColor: "#fff",
-                        fillOpacity: 0,
-                        opacity: 0.13,
-                        className: "cwa-outline"
-                    }
-                }).addTo(map);
-            }
-        
 
         function addCityPointsLayer(cityPoints) {
             if (cityPointsLayer) {
@@ -1021,44 +993,29 @@
             const banner = document.getElementById("alert-banner");
             let userInAlert = false;
             let highestSeverityAlert = null;
-            
-            // Check if user is in any alert area
             for (const id in alertLayers) {
                 const layer = alertLayers[id];
-                if (layer && layer.getBounds) {
+                if (layer && (layer instanceof L.Polygon || layer instanceof L.FeatureGroup)) {
                     try {
                         if (layer.getBounds().contains([userLocation.lat, userLocation.lng])) {
                             userInAlert = true;
-                            // Get the alert properties
-                            let alertProps = null;
-                            for (const alert of allAlerts) {
-                                if (alert.properties.id === id) {
-                                    alertProps = alert.properties;
-                                    break;
-                                }
-                            }
-                            
-                            if (alertProps) {
-                                if (!highestSeverityAlert) {
-                                    highestSeverityAlert = {id, eventType: alertProps.event, severity: alertProps.severity};
-                                } else {
-                                    // Prioritize alerts by severity
-                                    const severityOrder = {Extreme: 0, Severe: 1, Moderate: 2, Minor: 3, Unknown: 4};
-                                    const currentSeverity = severityOrder[alertProps.severity] || 4;
-                                    const highestSeverity = severityOrder[highestSeverityAlert.severity] || 4;
-                                    
-                                    if (currentSeverity < highestSeverity) {
-                                        highestSeverityAlert = {id, eventType: alertProps.event, severity: alertProps.severity};
-                                    }
-                                }
+                            const popupContent = layer.getPopup().getContent();
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(popupContent, "text/html");
+                            const eventType = doc.querySelector("h3").textContent;
+                            const severity = doc.querySelector("p:nth-child(3)").textContent.replace("Severity: ", "");
+                            if (!highestSeverityAlert) {
+                                highestSeverityAlert = {id, eventType, severity};
+                            } else if (severity === "Extreme" && highestSeverityAlert.severity !== "Extreme") {
+                                highestSeverityAlert = {id, eventType, severity};
+                            } else if (severity === "Severe" && highestSeverityAlert.severity !== "Extreme" && 
+                                      highestSeverityAlert.severity !== "Severe") {
+                                highestSeverityAlert = {id, eventType, severity};
                             }
                         }
-                    } catch (error) {
-                        console.error("Error checking bounds:", error);
-                    }
+                    } catch (error) {}
                 }
             }
-            
             if (userInAlert && highestSeverityAlert) {
                 const alert = highestSeverityAlert;
                 banner.innerHTML = `
@@ -1075,7 +1032,7 @@
             const layer = alertLayers[alertId];
             if (layer) {
                 if (layer.getBounds) map.fitBounds(layer.getBounds());
-                if (layer.openPopup) layer.openPopup();
+                layer.openPopup();
             }
         }
 
