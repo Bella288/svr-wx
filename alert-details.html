@@ -71,6 +71,24 @@
             color: #222;
             line-height: 1.5;
         }
+        .when-box {
+            background: #f0f4ff;
+            padding: 1rem;
+            border-radius: 7px;
+            border-left: 4px solid #5b6abf;
+            margin: 0.4rem 0 1rem 0;
+            color: #222;
+            line-height: 1.5;
+        }
+        .additional-details-box {
+            background: #f8fafc;
+            padding: 1rem;
+            border-radius: 7px;
+            border-left: 4px solid #7f8c8d;
+            margin: 0.4rem 0 1rem 0;
+            color: #222;
+            line-height: 1.5;
+        }
         .back-link {
             display: inline-block;
             margin-top: 2rem;
@@ -137,6 +155,15 @@
             background-color: #95a5a6;
             color: white;
         }
+        .where-box {
+            background: #f9f9f9;
+            padding: 1rem;
+            border-radius: 7px;
+            border-left: 4px solid #27ae60;
+            margin: 0.4rem 0 1rem 0;
+            color: #222;
+            line-height: 1.5;
+        }
     </style>
 </head>
 <body>
@@ -168,7 +195,7 @@
         
         <div class="details-section">
             <span class="section-label">Where:</span>
-            <span class="value" id="alert-where">-</span>
+            <div class="where-box" id="alert-where">-</div>
         </div>
         
         <div class="details-section">
@@ -182,12 +209,22 @@
         </div>
         
         <div class="details-section">
+            <span class="section-label">When:</span>
+            <div class="when-box" id="alert-when">-</div>
+        </div>
+        
+        <div class="details-section">
             <span class="section-label">Impact:</span>
             <div class="impact-box" id="alert-impact">-</div>
         </div>
         
         <div class="details-section">
-            <span class="section-label">Details:</span>
+            <span class="section-label">Additional Details:</span>
+            <div class="additional-details-box" id="alert-additional-details">-</div>
+        </div>
+        
+        <div class="details-section">
+            <span class="section-label">Full Description:</span>
             <div class="instructions" id="alert-details">-</div>
         </div>
         
@@ -232,6 +269,44 @@
             if (severity.includes("minor")) return "urgency-minor";
             return "urgency-unknown";
         }
+        
+        function formatWhereText(whereText) {
+            if (!whereText) return "No location information available.";
+            
+            // Replace state abbreviations with full state names for better readability
+            const stateMap = {
+                'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas', 
+                'CA': 'California', 'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware', 
+                'FL': 'Florida', 'GA': 'Georgia', 'HI': 'Hawaii', 'ID': 'Idaho', 
+                'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa', 'KS': 'Kansas', 
+                'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland', 
+                'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi', 
+                'MO': 'Missouri', 'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada', 
+                'NH': 'New Hampshire', 'NJ': 'New Jersey', 'NM': 'New Mexico', 'NY': 'New York', 
+                'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio', 'OK': 'Oklahoma', 
+                'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina', 
+                'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah', 
+                'VT': 'Vermont', 'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia', 
+                'WI': 'Wisconsin', 'WY': 'Wyoming', 'DC': 'District of Columbia', 
+                'PR': 'Puerto Rico', 'VI': 'Virgin Islands', 'GU': 'Guam', 
+                'AS': 'American Samoa', 'MP': 'Northern Mariana Islands'
+            };
+            
+            let formattedText = whereText;
+            
+            // Replace state abbreviations with full names
+            for (const [abbr, fullName] of Object.entries(stateMap)) {
+                const regex = new RegExp(`\\b${abbr}\\b`, 'g');
+                formattedText = formattedText.replace(regex, fullName);
+            }
+            
+            // Format with line breaks for better readability
+            formattedText = formattedText
+                .replace(/\. In /g, '.<br><br>In ')
+                .replace(/, /g, ',<br>');
+                
+            return formattedText;
+        }
 
         function renderAlertDetails(alert) {
             // Set title
@@ -251,12 +326,18 @@
             document.getElementById("alert-issuer").textContent = safe(alert.senderName || alert.issuer || "-");
             document.getElementById("alert-severity").textContent = safe(alert.severity || "-");
             document.getElementById("alert-likelihood").textContent = safe(alert.certainty || alert.likelihood || "-");
-            document.getElementById("alert-where").textContent = safe(alert.areaDesc || alert.where || "-");
-            document.getElementById("alert-movement").textContent = safe(alert.movement || (alert.parameters && alert.parameters.movement) || "-");
+            
+            // Set the WHERE field with formatted text
+            document.getElementById("alert-where").innerHTML = formatWhereText(alert.areaDesc || alert.where || "-");
+            
+            // Set movement
+            document.getElementById("alert-movement").textContent = safe(alert.movement || (alert.parameters && alert.parameters.movement) || "No movement information available.");
             
             // Set the new fields
             document.getElementById("alert-what").innerHTML = safe(alert.what || "No 'What' information available.").replace(/\n/g, "<br>");
+            document.getElementById("alert-when").innerHTML = safe(alert.when || "No timing information available.").replace(/\n/g, "<br>");
             document.getElementById("alert-impact").innerHTML = safe(alert.impact || "No impact information available.").replace(/\n/g, "<br>");
+            document.getElementById("alert-additional-details").innerHTML = safe(alert.additionalDetails || "No additional details available.").replace(/\n/g, "<br>");
             
             // Set description and instructions
             document.getElementById("alert-details").innerHTML = safe(alert.description || alert.headline || "No details available.").replace(/\n/g, "<br>");
