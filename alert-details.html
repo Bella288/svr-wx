@@ -72,16 +72,6 @@
         .value {
             color: #222;
         }
-        .impact, .hazard, .source {
-            margin-bottom:0.5rem;
-        }
-        .impact-label, .hazard-label, .source-label {
-            color: #b34a4a;
-            font-weight: bold;
-            margin-right: 0.4rem;
-        }
-        .hazard-label { color: #b38d19; }
-        .source-label { color: #366ca3; }
     </style>
 </head>
 <body>
@@ -113,9 +103,6 @@
         </div>
         <div class="details-section">
             <span class="section-label">Details:</span>
-            <div class="impact" id="alert-impact"></div>
-            <div class="hazard" id="alert-hazard"></div>
-            <div class="source" id="alert-source"></div>
             <div class="instructions" id="alert-details">-</div>
         </div>
         <div class="details-section">
@@ -126,6 +113,7 @@
     </div>
     <script>
         function fromQueryString(qs) {
+            // Parse query string into object. Handles ?key=value&key2=value2...
             const params = {};
             qs.replace(/^\?/, "").split("&").forEach(pair => {
                 if (!pair) return;
@@ -147,51 +135,6 @@
             return str.replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
 
-        function extractAlertMovement(description) {
-            if (!description) return "";
-            const movingRegex = /(?:^|\n|\.\s*)[^A-Za-z0-9]*moving\s+([a-z]+(?:\s+at)?\s+\d+\s*(?:mph|kt|km\/h|kph|m\/s|knots)?)/i;
-            const found = description.match(movingRegex);
-            if (found && found[1]) {
-                let phrase = found[1].trim();
-                phrase = phrase.replace(/^([a-z]+)/i, (m) => m.charAt(0).toUpperCase() + m.slice(1));
-                return phrase;
-            }
-            return "";
-        }
-
-        function extractImpact(description) {
-            if (!description) return "";
-            const impactMatch = description.match(/IMPACT\.\.\.([\s\S]+?)(?:\n|$|\*)/i);
-            return impactMatch ? impactMatch[1].trim() : "";
-        }
-
-        function extractHazard(description) {
-            if (!description) return "";
-            const hazardMatch = description.match(/HAZARD\.\.\.([\s\S]+?)(?:\n|$|\*)/i);
-            return hazardMatch ? hazardMatch[1].trim() : "";
-        }
-
-        function extractSource(sourceStr, description) {
-            if (sourceStr && sourceStr.trim() !== "-") {
-                let src = sourceStr.trim();
-                if (/Radar Indicated Rotation/i.test(src)) return "Radar Observation";
-                if (/Radar Indicated/i.test(src)) return "Radar Observation";
-                if (/Trained Spotters Confirmed/i.test(src)) return "Confirmed Reports";
-                return src;
-            }
-            if (description) {
-                const srcMatch = description.match(/SOURCE\.\.\.([^\n]*)/i);
-                if (srcMatch && srcMatch[1]) {
-                    let src = srcMatch[1].trim();
-                    if (/Radar Indicated Rotation/i.test(src)) return "Radar Observation";
-                    if (/Radar Indicated/i.test(src)) return "Radar Observation";
-                    if (/Trained Spotters Confirmed/i.test(src)) return "Confirmed Reports";
-                    return src;
-                }
-            }
-            return "-";
-        }
-
         function renderAlertDetails(alert) {
             document.getElementById("alert-title").textContent = safe(alert.event || "Alert Details");
             document.getElementById("alert-start").textContent = parseDate(alert.effective);
@@ -200,23 +143,13 @@
             document.getElementById("alert-severity").textContent = safe(alert.severity || "-");
             document.getElementById("alert-likelihood").textContent = safe(alert.certainty || alert.likelihood || "-");
             document.getElementById("alert-where").textContent = safe(alert.areaDesc || alert.where || "-");
-
-            let description = alert.description || alert.headline || "";
-            let movement = alert.movement || extractAlertMovement(description) || (alert.parameters && alert.parameters.movement) || "";
-            document.getElementById("alert-movement").textContent = safe(movement || "-");
-
-            let impact = alert.impact || extractImpact(description);
-            let hazard = alert.hazard || extractHazard(description);
-            let source = extractSource(alert.source, description);
-
-            document.getElementById("alert-impact").innerHTML = impact ? `<span class="impact-label">Impact:</span> <span>${safe(impact).replace(/\n/g, "<br>")}</span>` : "";
-            document.getElementById("alert-hazard").innerHTML = hazard ? `<span class="hazard-label">Hazard:</span> <span>${safe(hazard).replace(/\n/g, "<br>")}</span>` : "";
-            document.getElementById("alert-source").innerHTML = source && source !== "-" ? `<span class="source-label">Source:</span> <span>${safe(source)}</span>` : "";
-
-            document.getElementById("alert-details").innerHTML = safe(description || "-").replace(/\n/g, "<br>");
+            document.getElementById("alert-movement").textContent = safe(alert.movement || (alert.parameters && alert.parameters.movement) || "-");
+            document.getElementById("alert-details").innerHTML = safe(alert.description || alert.headline || "-").replace(/\n/g, "<br>");
             document.getElementById("alert-instructions").innerHTML = safe(alert.instruction || "-").replace(/\n/g, "<br>");
         }
 
+        // 1. From localStorage or sessionStorage (preferred, if set by previous page)
+        // 2. From query string (as JSON, URI encoded) as fallback
         let alertObj = null;
         try {
             const local = window.sessionStorage.getItem("selectedAlert") || window.localStorage.getItem("selectedAlert");
