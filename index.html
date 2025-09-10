@@ -773,7 +773,7 @@
             if (affectedZoneGeometriesPromises.length > 0) {
                 Promise.all(affectedZoneGeometriesPromises).then(geoms => {
                     affectedZoneLayer = L.layerGroup();
-                    geoms.forEach((geometry, i) => {
+                    geoms.forEach((geometry, i) {
                         if (!geometry) return;
                         const style = affectedZoneProps[i].style;
                         const properties = affectedZoneProps[i].properties;
@@ -993,29 +993,44 @@
             const banner = document.getElementById("alert-banner");
             let userInAlert = false;
             let highestSeverityAlert = null;
+            
+            // Check if user is in any alert area
             for (const id in alertLayers) {
                 const layer = alertLayers[id];
-                if (layer && (layer instanceof L.Polygon || layer instanceof L.FeatureGroup)) {
+                if (layer && layer.getBounds) {
                     try {
                         if (layer.getBounds().contains([userLocation.lat, userLocation.lng])) {
                             userInAlert = true;
-                            const popupContent = layer.getPopup().getContent();
-                            const parser = new DOMParser();
-                            const doc = parser.parseFromString(popupContent, "text/html");
-                            const eventType = doc.querySelector("h3").textContent;
-                            const severity = doc.querySelector("p:nth-child(3)").textContent.replace("Severity: ", "");
-                            if (!highestSeverityAlert) {
-                                highestSeverityAlert = {id, eventType, severity};
-                            } else if (severity === "Extreme" && highestSeverityAlert.severity !== "Extreme") {
-                                highestSeverityAlert = {id, eventType, severity};
-                            } else if (severity === "Severe" && highestSeverityAlert.severity !== "Extreme" && 
-                                      highestSeverityAlert.severity !== "Severe") {
-                                highestSeverityAlert = {id, eventType, severity};
+                            // Get the alert properties
+                            let alertProps = null;
+                            for (const alert of allAlerts) {
+                                if (alert.properties.id === id) {
+                                    alertProps = alert.properties;
+                                    break;
+                                }
+                            }
+                            
+                            if (alertProps) {
+                                if (!highestSeverityAlert) {
+                                    highestSeverityAlert = {id, eventType: alertProps.event, severity: alertProps.severity};
+                                } else {
+                                    // Prioritize alerts by severity
+                                    const severityOrder = {Extreme: 0, Severe: 1, Moderate: 2, Minor: 3, Unknown: 4};
+                                    const currentSeverity = severityOrder[alertProps.severity] || 4;
+                                    const highestSeverity = severityOrder[highestSeverityAlert.severity] || 4;
+                                    
+                                    if (currentSeverity < highestSeverity) {
+                                        highestSeverityAlert = {id, eventType: alertProps.event, severity: alertProps.severity};
+                                    }
+                                }
                             }
                         }
-                    } catch (error) {}
+                    } catch (error) {
+                        console.error("Error checking bounds:", error);
+                    }
                 }
             }
+            
             if (userInAlert && highestSeverityAlert) {
                 const alert = highestSeverityAlert;
                 banner.innerHTML = `
@@ -1032,7 +1047,7 @@
             const layer = alertLayers[alertId];
             if (layer) {
                 if (layer.getBounds) map.fitBounds(layer.getBounds());
-                layer.openPopup();
+                if (layer.openPopup) layer.openPopup();
             }
         }
 
