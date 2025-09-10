@@ -628,10 +628,12 @@
             
             // If we found an alert, extract all needed information
             if (foundAlert) {
-                // Extract Movement, Impact, and What from description
+                // Extract Movement, Impact, What, When, and Additional Details from description
                 let movement = "";
                 let impact = "";
                 let what = "";
+                let when = "";
+                let additionalDetails = "";
                 
                 if (foundAlert.description) {
                     const desc = foundAlert.description;
@@ -643,7 +645,7 @@
                     }
                     
                     // Extract IMPACT if available (look for "EFFECT" or "IMPACTS" section)
-                    const impactMatch = desc.match(/\* IMPACTS[:\*]*([^*]+)(?=\*|$)/i) || 
+                    const impactMatch = desc.match(/\* IMPACTS?[:\*]*([^*]+)(?=\*|$)/i) || 
                                        desc.match(/EFFECT[:\*]*([^*]+)(?=\*|$)/i);
                     if (impactMatch) {
                         impact = impactMatch[1].trim();
@@ -653,6 +655,18 @@
                     const whatMatch = desc.match(/\* WHAT[:\*]*([^*]+)(?=\*|$)/i);
                     if (whatMatch) {
                         what = whatMatch[1].trim();
+                    }
+                    
+                    // Extract WHEN if available
+                    const whenMatch = desc.match(/\* WHEN[:\*]*([^*]+)(?=\*|$)/i);
+                    if (whenMatch) {
+                        when = whenMatch[1].trim();
+                    }
+                    
+                    // Extract ADDITIONAL DETAILS if available
+                    const additionalMatch = desc.match(/\* ADDITIONAL DETAILS[:\*]*([^*]+)(?=\*|$)/i);
+                    if (additionalMatch) {
+                        additionalDetails = additionalMatch[1].trim();
                     }
                 }
                 
@@ -671,7 +685,9 @@
                     parameters: foundAlert.parameters || {},
                     movement: movement,
                     impact: impact,
-                    what: what
+                    what: what,
+                    when: when,
+                    additionalDetails: additionalDetails
                 };
                 
                 try {
@@ -706,7 +722,6 @@
                 window.location.href = "/alert-details.html";
             }
         }
-
         function renderActiveCountyView() {
             if (!countyFeatureCollection) return;
             countyOutlinesLayer = L.geoJSON(countyFeatureCollection, {
