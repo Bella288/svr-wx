@@ -5,12 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Alert Details</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-    <link rel="icon" type="image/png" href="/public/assets/web_presence/icons/favicon-96x96.png" sizes="96x96" />
-    <link rel="icon" type="image/svg+xml" href="/public/assets/web_presence/icons/favicon.svg" />
-    <link rel="shortcut icon" href="/public/assets/web_presence/icons/favicon.ico" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/public/assets/web_presence/icons/apple-touch-icon.png" />
-    <meta name="apple-mobile-web-app-title" content="SVR WX" />
-    <link rel="manifest" href="/public/assets/web_presence/icons/site.webmanifest" />
     <style>
         body {
             background: #f7f9fa;
@@ -170,6 +164,10 @@
             color: #222;
             line-height: 1.5;
         }
+        .no-info {
+            color: #7f8c8d;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
@@ -277,7 +275,7 @@
         }
         
         function formatWhereText(whereText) {
-            if (!whereText) return "No location information available.";
+            if (!whereText) return '<span class="no-info">No location information available.</span>';
             
             // Replace state abbreviations with full state names for better readability
             const stateMap = {
@@ -306,12 +304,38 @@
                 formattedText = formattedText.replace(regex, fullName);
             }
             
-            // Format with line breaks for better readability
+            // Format with line breaks for better readability - fix the formatting
             formattedText = formattedText
-                .replace(/\. In /g, '.<br><br>In ')
-                .replace(/, /g, ',<br>');
+                // Remove line breaks within county/state pairs
+                .replace(/,\s*\n\s*/g, ", ")
+                // Replace semicolons with line breaks
+                .replace(/;\s*/g, "<br>")
+                // Add line breaks after states
+                .replace(/([a-zA-Z]),\s*([A-Z][a-zA-Z\s]+)(?=<br>|$)/g, "$1, $2<br>")
+                // Clean up any double line breaks
+                .replace(/<br><br>/g, "<br>")
+                // Remove trailing <br>
+                .replace(/<br>$/, "");
                 
             return formattedText;
+        }
+        
+        function extractFromDescription(description, fieldName) {
+            if (!description) return null;
+            
+            const patterns = {
+                what: /\* WHAT[:\*\.]*([^*]+)(?=\* WHERE|\* WHEN|\* IMPACTS|\* ADDITIONAL|\* Instructions|\* For more|\* To report|\* A|\* Stay|\* The|\* For your|\z)/i,
+                when: /\* WHEN[:\*\.]*([^*]+)(?=\* WHAT|\* WHERE|\* IMPACTS|\* ADDITIONAL|\* Instructions|\* For more|\* To report|\* A|\* Stay|\* The|\* For your|\z)/i,
+                impacts: /\* IMPACTS?[:\*\.]*([^*]+)(?=\* ADDITIONAL|\* WHEN|\* WHERE|\* WHAT|\* Instructions|\* For more|\* To report|\* A|\* Stay|\* The|\* For your|\z)/i,
+                additional: /\* ADDITIONAL DETAILS[:\*\.]*([^*]+)(?=\* WHAT|\* WHERE|\* WHEN|\* IMPACTS|\* Instructions|\* For more|\* To report|\* A|\* Stay|\* The|\* For your|\z)/i
+            };
+            
+            if (patterns[fieldName]) {
+                const match = description.match(patterns[fieldName]);
+                return match ? match[1].trim() : null;
+            }
+            
+            return null;
         }
 
         function renderAlertDetails(alert) {
@@ -337,17 +361,42 @@
             document.getElementById("alert-where").innerHTML = formatWhereText(alert.areaDesc || alert.where || "-");
             
             // Set movement
-            document.getElementById("alert-movement").textContent = safe(alert.movement || (alert.parameters && alert.parameters.movement) || "No movement information available.");
+            const movementText = alert.movement || (alert.parameters && alert.parameters.movement);
+            document.getElementById("alert-movement").innerHTML = movementText ? 
+                safe(movementText) : 
+                '<span class="no-info">No movement information available.</span>';
             
-            // Set the new fields
-            document.getElementById("alert-what").innerHTML = safe(alert.what || "No 'What' information available.").replace(/\n/g, "<br>");
-            document.getElementById("alert-when").innerHTML = safe(alert.when || "No timing information available.").replace(/\n/g, "<br>");
-            document.getElementById("alert-impact").innerHTML = safe(alert.impact || "No impact information available.").replace(/\n/g, "<br>");
-            document.getElementById("alert-additional-details").innerHTML = safe(alert.additionalDetails || "No additional details available.").replace(/\n/g, "<br>");
+            // Extract fields from description if not already provided
+            const what = alert.what || extractFromDescription(alert.description, "what");
+            const when = alert.when || extractFromDescription(alert.description, "when");
+            const impact = alert.impact || extractFromDescription(alert.description, "impacts");
+            const additionalDetails = alert.additionalDetails || extractFromDescription(alert.description, "additional");
+            
+            // Set the extracted fields
+            document.getElementById("alert-what").innerHTML = what ? 
+                safe(what).replace(/\n/g, "<br>") : 
+                '<span class="no-info">No "What" information available.</span>';
+                
+            document.getElementById("alert-when").innerHTML = when ? 
+                safe(when).replace(/\n/g, "<br>") : 
+                '<span class="no-info">No timing information available.</span>';
+                
+            document.getElementById("alert-impact").innerHTML = impact ? 
+                safe(impact).replace(/\n/g, "<br>") : 
+                '<span class="no-info">No impact information available.</span>';
+                
+            document.getElementById("alert-additional-details").innerHTML = additionalDetails ? 
+                safe(additionalDetails).replace(/\n/g, "<br>") : 
+                '<span class="no-info">No additional details available.</span>';
             
             // Set description and instructions
-            document.getElementById("alert-details").innerHTML = safe(alert.description || alert.headline || "No details available.").replace(/\n/g, "<br>");
-            document.getElementById("alert-instructions").innerHTML = safe(alert.instruction || "No specific instructions provided.").replace(/\n/g, "<br>");
+            document.getElementById("alert-details").innerHTML = alert.description || alert.headline ? 
+                safe(alert.description || alert.headline).replace(/\n/g, "<br>") : 
+                '<span class="no-info">No details available.</span>';
+                
+            document.getElementById("alert-instructions").innerHTML = alert.instruction ? 
+                safe(alert.instruction).replace(/\n/g, "<br>") : 
+                '<span class="no-info">No specific instructions provided.</span>';
         }
 
         // 1. From localStorage or sessionStorage (preferred, if set by previous page)
@@ -375,7 +424,7 @@
             renderAlertDetails(alertObj);
         } else {
             document.getElementById("alert-title").textContent = "Alert not found";
-            document.getElementById("alert-details").innerHTML = "The alert details could not be loaded. Please go back to the map and try again.";
+            document.getElementById("alert-details").innerHTML = '<span class="no-info">The alert details could not be loaded. Please go back to the map and try again.</span>';
         }
     </script>
 </body>
