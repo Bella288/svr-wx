@@ -653,13 +653,13 @@
                     };
                 }
             }).addTo(map);
-
+        
             let countyAlertsByFIPS = {};
             let alertGeometries = [];
             let cityPoints = [];
             let affectedZoneGeometriesPromises = [];
             let affectedZoneProps = [];
-
+        
             allAlerts.forEach(alert => {
                 const properties = alert.properties;
                 const eventType = properties.event;
@@ -668,7 +668,7 @@
                 const filterCheckbox = document.getElementById("filter-" + eventType.replace(/\s+/g, "-"));
                 if (filterCheckbox && !filterCheckbox.checked) show = false;
                 if (!show) return;
-
+        
                 if (alert.geometry && (alert.geometry.type === "Polygon" || alert.geometry.type === "MultiPolygon")) {
                     alertGeometries.push({
                         geometry: alert.geometry,
@@ -736,7 +736,7 @@
                     });
                 }
             });
-
+        
             if (alertGeometries.length > 0) {
                 alertPolygonLayer = L.layerGroup();
                 alertGeometries.forEach(item => {
@@ -769,11 +769,11 @@
                 });
                 alertPolygonLayer.addTo(map);
             }
-
+        
             if (affectedZoneGeometriesPromises.length > 0) {
                 Promise.all(affectedZoneGeometriesPromises).then(geoms => {
                     affectedZoneLayer = L.layerGroup();
-                    geoms.forEach((geometry, i)) 
+                    geoms.forEach((geometry, i) => {
                         if (!geometry) return;
                         const style = affectedZoneProps[i].style;
                         const properties = affectedZoneProps[i].properties;
@@ -804,9 +804,9 @@
                         if (layer) { affectedZoneLayer.addLayer(layer); }
                     });
                     affectedZoneLayer.addTo(map);
-                };
+                });
             }
-
+        
             const countyAlertFeatures = [];
             for (const fips in countyAlertsByFIPS) {
                 const base = countyLookup[fips];
@@ -859,6 +859,34 @@
                     }
                 ).addTo(map);
             }
+        
+            addCityPointsLayer(cityPoints);
+        
+            if (marineZonesFeatureCollection && marineZonesFeatureCollection.features.length > 0) {
+                marineZonesLayer = L.geoJSON(marineZonesFeatureCollection, {
+                    style: {
+                        color: "#11b6e8",
+                        weight: 1,
+                        fillColor: "#b6f1ff",
+                        fillOpacity: 0.09,
+                        opacity: 0.4,
+                        className: "marine-zone-outline"
+                    }
+                }).addTo(map);
+            }
+            if (cwaFeatureCollection && cwaFeatureCollection.features.length > 0) {
+                cwaLayer = L.geoJSON(cwaFeatureCollection, {
+                    style: {
+                        color: "#000",
+                        weight: 1,
+                        fillColor: "#fff",
+                        fillOpacity: 0,
+                        opacity: 0.13,
+                        className: "cwa-outline"
+                    }
+                }).addTo(map);
+            }
+        }
 
             addCityPointsLayer(cityPoints);
 
