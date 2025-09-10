@@ -773,7 +773,7 @@
             if (affectedZoneGeometriesPromises.length > 0) {
                 Promise.all(affectedZoneGeometriesPromises).then(geoms => {
                     affectedZoneLayer = L.layerGroup();
-                    geoms.forEach((geometry, i)) {
+                    geoms.forEach((geometry, i)) 
                         if (!geometry) return;
                         const style = affectedZoneProps[i].style;
                         const properties = affectedZoneProps[i].properties;
