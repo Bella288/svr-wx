@@ -644,27 +644,26 @@
                         movement = movementMatch[0];
                     }
                     
-                    // Extract IMPACT if available (look for "EFFECT" or "IMPACTS" section)
-                    const impactMatch = desc.match(/\* IMPACTS?[:\*]*([^*]+)(?=\*|$)/i) || 
-                                       desc.match(/EFFECT[:\*]*([^*]+)(?=\*|$)/i);
+                    // Extract IMPACT if available (look for "IMPACTS" section)
+                    const impactMatch = desc.match(/\* IMPACTS?[:\*]*([^*]+)(?=\* ADDITIONAL|\* WHEN|\* WHERE|\* WHAT|\* Instructions|\* For more|\* To report|\* A|\* Stay|\* The|\* For your|\z)/i);
                     if (impactMatch) {
                         impact = impactMatch[1].trim();
                     }
                     
                     // Extract WHAT if available
-                    const whatMatch = desc.match(/\* WHAT[:\*]*([^*]+)(?=\*|$)/i);
+                    const whatMatch = desc.match(/\* WHAT[:\*]*([^*]+)(?=\* WHERE|\* WHEN|\* IMPACTS|\* ADDITIONAL|\* Instructions|\* For more|\* To report|\* A|\* Stay|\* The|\* For your|\z)/i);
                     if (whatMatch) {
                         what = whatMatch[1].trim();
                     }
                     
                     // Extract WHEN if available
-                    const whenMatch = desc.match(/\* WHEN[:\*]*([^*]+)(?=\*|$)/i);
+                    const whenMatch = desc.match(/\* WHEN[:\*]*([^*]+)(?=\* WHAT|\* WHERE|\* IMPACTS|\* ADDITIONAL|\* Instructions|\* For more|\* To report|\* A|\* Stay|\* The|\* For your|\z)/i);
                     if (whenMatch) {
                         when = whenMatch[1].trim();
                     }
                     
                     // Extract ADDITIONAL DETAILS if available
-                    const additionalMatch = desc.match(/\* ADDITIONAL DETAILS[:\*]*([^*]+)(?=\*|$)/i);
+                    const additionalMatch = desc.match(/\* ADDITIONAL DETAILS[:\*]*([^*]+)(?=\* WHAT|\* WHERE|\* WHEN|\* IMPACTS|\* Instructions|\* For more|\* To report|\* A|\* Stay|\* The|\* For your|\z)/i);
                     if (additionalMatch) {
                         additionalDetails = additionalMatch[1].trim();
                     }
