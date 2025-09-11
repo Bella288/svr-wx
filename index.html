@@ -157,13 +157,12 @@
         .refresh-info { 
             position: absolute; 
             bottom: 1rem; 
-            left: 220px;
+            left: 1rem;
             background-color: rgba(255,255,255,0.8); 
             padding: 0.5rem 1rem; 
             border-radius: 8px; 
             font-size: 0.9rem; 
             z-index: 1000; 
-            transition: left 0.3s ease;
         }
         
         .filter-panel.collapsed ~ .refresh-info {
@@ -175,35 +174,22 @@
         .progress-bar { 
             position: absolute; 
             bottom: 3.5rem; 
-            left: 220px;
+            left: 1rem;
             width: 200px; 
             height: 10px; 
             background-color: #f0f0f0; 
             border-radius: 5px; 
             overflow: hidden; 
             z-index: 1000; 
-            transition: left 0.3s ease;
         }
         
         .filter-panel.collapsed ~ .progress-bar {
             left: 70px;
         }
         
-        .api-status { 
-            position: absolute; 
-            bottom: 5rem; 
-            left: 220px;
-            background-color: rgba(255,255,255,0.8); 
-            padding: 0.5rem 1rem; 
-            border-radius: 8px; 
-            font-size: 0.8rem; 
-            z-index: 1000; 
-            transition: left 0.3s ease;
-        }
         
-        .filter-panel.collapsed ~ .api-status {
-            left: 70px;
-        }
+        
+        
         
         .view-toggle { 
             position: absolute; 
@@ -219,9 +205,8 @@
             gap: 0.5rem; 
             transition: left 0.3s ease;
         }
-        
         .filter-panel.collapsed ~ .view-toggle {
-            left: 70px;
+            left: 1rem;
         }
         
         .county-outline { color: #222; weight: 1.5; fill: #fff; fillOpacity: 0; opacity: 0.7; pointer-events: none; }
