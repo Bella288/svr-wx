@@ -644,26 +644,27 @@
                         movement = movementMatch[0];
                     }
                     
-                    // Extract IMPACT if available (look for "IMPACTS" section)
-                    const impactMatch = desc.match(/\* IMPACTS?[:\*]*([^*]+)(?=\* ADDITIONAL|\* WHEN|\* WHERE|\* WHAT|\* Instructions|\* For more|\* To report|\* A|\* Stay|\* The|\* For your|\z)/i);
+                    // Extract IMPACT if available (look for "IMPACTS" section with or without asterisk)
+                    const impactMatch = desc.match(/(?:\* )?IMPACTS?[:\*\.\s]*([^*]+)(?=\* ADDITIONAL|\* WHEN|\* WHERE|\* WHAT|\* Instructions|\* For more|\* To report|\* A|\* Stay|\* The|\* For your|\z)/i) ||
+                                       desc.match(/EFFECT[:\*\.\s]*([^*]+)(?=\* ADDITIONAL|\* WHEN|\* WHERE|\* WHAT|\* Instructions|\* For more|\* To report|\* A|\* Stay|\* The|\* For your|\z)/i);
                     if (impactMatch) {
                         impact = impactMatch[1].trim();
                     }
                     
-                    // Extract WHAT if available
-                    const whatMatch = desc.match(/\* WHAT[:\*]*([^*]+)(?=\* WHERE|\* WHEN|\* IMPACTS|\* ADDITIONAL|\* Instructions|\* For more|\* To report|\* A|\* Stay|\* The|\* For your|\z)/i);
+                    // Extract WHAT if available (with or without asterisk)
+                    const whatMatch = desc.match(/(?:\* )?WHAT[:\*\.\s]*([^*]+)(?=\* WHERE|\* WHEN|\* IMPACTS|\* ADDITIONAL|\* Instructions|\* For more|\* To report|\* A|\* Stay|\* The|\* For your|\z)/i);
                     if (whatMatch) {
                         what = whatMatch[1].trim();
                     }
                     
-                    // Extract WHEN if available
-                    const whenMatch = desc.match(/\* WHEN[:\*]*([^*]+)(?=\* WHAT|\* WHERE|\* IMPACTS|\* ADDITIONAL|\* Instructions|\* For more|\* To report|\* A|\* Stay|\* The|\* For your|\z)/i);
+                    // Extract WHEN if available (with or without asterisk)
+                    const whenMatch = desc.match(/(?:\* )?WHEN[:\*\.\s]*([^*]+)(?=\* WHAT|\* WHERE|\* IMPACTS|\* ADDITIONAL|\* Instructions|\* For more|\* To report|\* A|\* Stay|\* The|\* For your|\z)/i);
                     if (whenMatch) {
                         when = whenMatch[1].trim();
                     }
                     
-                    // Extract ADDITIONAL DETAILS if available
-                    const additionalMatch = desc.match(/\* ADDITIONAL DETAILS[:\*]*([^*]+)(?=\* WHAT|\* WHERE|\* WHEN|\* IMPACTS|\* Instructions|\* For more|\* To report|\* A|\* Stay|\* The|\* For your|\z)/i);
+                    // Extract ADDITIONAL DETAILS if available (with or without asterisk)
+                    const additionalMatch = desc.match(/(?:\* )?ADDITIONAL DETAILS[:\*\.\s]*([^*]+)(?=\* WHAT|\* WHERE|\* WHEN|\* IMPACTS|\* Instructions|\* For more|\* To report|\* A|\* Stay|\* The|\* For your|\z)/i);
                     if (additionalMatch) {
                         additionalDetails = additionalMatch[1].trim();
                     }
