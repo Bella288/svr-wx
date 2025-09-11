@@ -452,6 +452,15 @@
                 event.stopPropagation();
             });
         }
+        // Add this function to initialize the panels in collapsed state
+        function initializePanels() {
+            const filterPanel = document.querySelector('.filter-panel');
+            const legendPanel = document.querySelector('.legend');
+            
+            // Start with both panels collapsed
+            filterPanel.classList.add('collapsed');
+            legendPanel.classList.add('collapsed');
+        }
 
 
         function getAlertStyle(properties) {
@@ -481,28 +490,30 @@
                 geoapifyRequestCount = parseInt(savedCount);
                 document.getElementById("geoapify-count").textContent = geoapifyRequestCount;
             }
-
+        
             const savedViewMode = localStorage.getItem("weatherTrackerViewMode");
             if (savedViewMode) {
                 document.getElementById("view-mode").value = savedViewMode;
                 polygonMode = savedViewMode === "polygon";
             }
-
+        
             document.getElementById("view-mode").addEventListener("change", function() {
                 polygonMode = this.value === "polygon";
                 localStorage.setItem("weatherTrackerViewMode", this.value);
                 renderAlerts();
             });
-
+        
+            // Initialize panels first, then load data
+            initializePanels();
+            setupCollapsiblePanels();
+            
             Promise.all([
                 loadAllCountyBoundaries(),
                 loadMarineZones(),
                 loadCWABoundaries()
             ]).then(() => fetchWeatherData());
             setInterval(fetchWeatherData, 60000);
-            setupCollapsiblePanels();
         });
-
         async function loadAllCountyBoundaries() {
             countyLookup = {};
             let features = [];
@@ -528,9 +539,12 @@
                             }
                         }
                         fetchCount++;
+                        // Update progress bar - make sure this line is present
                         document.getElementById("progress-bar").style.width = `${Math.round((fetchCount / STATE_ABBRS.length) * 100)}%`;
                     }
-                } catch (error) {}
+                } catch (error) {
+                    console.error("Error loading county data for", abbr, error);
+                }
             }
             countyFeatureCollection = { type: "FeatureCollection", features };
         }
