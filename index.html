@@ -57,6 +57,18 @@
         .alert-instructions-link:hover {
             color: #1d6fa5;
         }
+        .banner-alert-selector {
+            margin-left: 10px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            padding: 2px 8px;
+            color: white;
+            cursor: pointer;
+        }
+        .banner-alert-selector:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -153,6 +165,8 @@
         let cityPointsLayer = null;
         let alertPolygonLayer = null;
         let affectedZoneLayer = null;
+        let currentBannerAlertIndex = 0;
+        let userAlerts = [];
 
         const alertStyles = {
             "Tornado Warning": { color: "#ff0000", className: "pulsing-layer", severityRank: 1 },
@@ -722,6 +736,7 @@
                 window.location.href = "/alert-details.html";
             }
         }
+
         function renderActiveCountyView() {
             if (!countyFeatureCollection) return;
             countyOutlinesLayer = L.geoJSON(countyFeatureCollection, {
@@ -1072,49 +1087,114 @@
             if (!userLocation || typeof userLocation.lat !== "number" || typeof userLocation.lng !== "number") {
                 return;
             }
+            
             const banner = document.getElementById("alert-banner");
-            let userInAlert = false;
-            let highestSeverityAlert = null;
+            userAlerts = [];
+            
+            // Check polygon alerts
             for (const id in alertLayers) {
                 const layer = alertLayers[id];
                 if (layer && (layer instanceof L.Polygon || layer instanceof L.FeatureGroup)) {
                     try {
                         if (layer.getBounds().contains([userLocation.lat, userLocation.lng])) {
-                            userInAlert = true;
                             const popupContent = layer.getPopup().getContent();
                             const parser = new DOMParser();
                             const doc = parser.parseFromString(popupContent, "text/html");
                             const eventType = doc.querySelector("h3").textContent;
                             const severity = doc.querySelector("p:nth-child(3)").textContent.replace("Severity: ", "");
-                            if (!highestSeverityAlert) {
-                                highestSeverityAlert = {id, eventType, severity};
-                            } else if (severity === "Extreme" && highestSeverityAlert.severity !== "Extreme") {
-                                highestSeverityAlert = {id, eventType, severity};
-                            } else if (severity === "Severe" && highestSeverityAlert.severity !== "Extreme" && 
-                                      highestSeverityAlert.severity !== "Severe") {
-                                highestSeverityAlert = {id, eventType, severity};
-                            }
+                            userAlerts.push({id, eventType, severity});
                         }
                     } catch (error) {}
                 }
             }
-            if (userInAlert && highestSeverityAlert) {
-                const alert = highestSeverityAlert;
-                banner.innerHTML = `
-                    <strong>${alert.eventType}</strong> is in effect for your location. 
-                    <a href="#" onclick="focusOnAlert('${alert.id}')">View details</a>
-                `;
+            
+            // Check county alerts
+            if (countyActiveLayer) {
+                countyActiveLayer.eachLayer(function(layer) {
+                    if (layer.getBounds && layer.getBounds().contains([userLocation.lat, userLocation.lng])) {
+                        const popupContent = layer.getPopup().getContent();
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(popupContent, "text/html");
+                        const eventType = doc.querySelector("h3").textContent;
+                        const severity = doc.querySelector("p:nth-child(5)").textContent.replace("Severity: ", "");
+                        userAlerts.push({id: layer._leaflet_id, eventType, severity});
+                    }
+                });
+            }
+            
+            if (userAlerts.length > 0) {
+                // Sort alerts by severity
+                userAlerts.sort((a, b) => {
+                    const severityOrder = { 
+                        "Extreme": 0, "Severe": 1, "Moderate": 2, "Minor": 3, "Unknown": 4 
+                    };
+                    return (severityOrder[a.severity] || 4) - (severityOrder[b.severity] || 4);
+                });
+                
+                currentBannerAlertIndex = 0;
+                updateBannerAlert();
+                
+                if (userAlerts.length > 1) {
+                    // Add navigation controls if multiple alerts
+                    banner.innerHTML += `
+                        <span class="banner-alert-selector" onclick="cycleBannerAlert(-1)">◀ Previous</span>
+                        <span class="banner-alert-selector" onclick="cycleBannerAlert(1)">Next ▶</span>
+                    `;
+                }
+                
                 banner.classList.add("active");
             } else {
                 banner.classList.remove("active");
             }
         }
 
+        function updateBannerAlert() {
+            const banner = document.getElementById("alert-banner");
+            if (userAlerts.length === 0) return;
+            
+            const alert = userAlerts[currentBannerAlertIndex];
+            banner.innerHTML = `
+                <strong>${alert.eventType}</strong> is in effect for your location. 
+                <a href="#" onclick="focusOnAlert('${alert.id}')">View details</a>
+            `;
+            
+            if (userAlerts.length > 1) {
+                banner.innerHTML += `
+                    <span class="banner-alert-selector" onclick="cycleBannerAlert(-1)">◀ Previous</span>
+                    <span class="banner-alert-selector" onclick="cycleBannerAlert(1)">Next ▶</span>
+                    <span>(${currentBannerAlertIndex + 1}/${userAlerts.length})</span>
+                `;
+            }
+        }
+
+        window.cycleBannerAlert = function(direction) {
+            currentBannerAlertIndex += direction;
+            if (currentBannerAlertIndex < 0) {
+                currentBannerAlertIndex = userAlerts.length - 1;
+            } else if (currentBannerAlertIndex >= userAlerts.length) {
+                currentBannerAlertIndex = 0;
+            }
+            updateBannerAlert();
+        }
+
         window.focusOnAlert = function(alertId) {
+            // Try to find the alert in polygon layers
             const layer = alertLayers[alertId];
             if (layer) {
                 if (layer.getBounds) map.fitBounds(layer.getBounds());
                 layer.openPopup();
+                return;
+            }
+            
+            // Try to find the alert in county layers
+            if (countyActiveLayer) {
+                countyActiveLayer.eachLayer(function(layer) {
+                    if (layer._leaflet_id == alertId) {
+                        map.fitBounds(layer.getBounds());
+                        layer.openPopup();
+                        return;
+                    }
+                });
             }
         }
 
