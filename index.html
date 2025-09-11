@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Severe Weather Tracker v3</title>
+    <title>Severe Weather Tracker</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <link rel="icon" type="image/png" href="/public/assets/web_presence/icons/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="/public/assets/web_presence/icons/favicon.svg" />
@@ -255,7 +255,7 @@
     <header>
         <div class="logo">
             <i>🌪️</i>
-            <h1>Severe Weather Tracker v3</h1>
+            <h1>Severe Weather Tracker</h1>
         </div>
         <div class="address-form">
             <input type="text" class="address-input" placeholder="Enter your address" id="address-input">
@@ -290,9 +290,6 @@
         </div>
         <div class="progress-bar">
             <div class="progress" id="progress-bar"></div>
-        </div>
-        <div class="api-status" id="api-status">
-            Geoapify requests today: <span id="geoapify-count">0</span>/3000
         </div>
         <div class="loading" id="loading">
             Loading weather data...
@@ -339,7 +336,6 @@
         let cwaFeatureCollection = null;
         let marineZonesGeojson = null;
         let marineZonesFeatureCollection = null;
-        let geoapifyRequestCount = 0;
         let allAlerts = [];
         let polygonMode = true;
         let countyOutlinesLayer = null;
