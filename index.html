@@ -153,7 +153,7 @@
         .legend-color { width: 20px; height: 20px; margin-right: 0.5rem; border-radius: 3px; border: 1px solid #888; }
         .loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: rgba(255,255,255,0.9); padding: 1rem 2rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 1000; display: none; }
         
-        /* Updated positioning for other controls to account for sidebars */
+        /* Positioning for controls */
         .refresh-info { 
             position: absolute; 
             bottom: 1rem; 
@@ -163,13 +163,8 @@
             border-radius: 8px; 
             font-size: 0.9rem; 
             z-index: 1000; 
+            transition: left 0.3s ease;
         }
-        
-        .filter-panel.collapsed ~ .refresh-info {
-            left: 70px;
-        }
-        
-        .filter-checkbox { margin: 0.3rem 0; }
         
         .progress-bar { 
             position: absolute; 
@@ -181,7 +176,9 @@
             border-radius: 5px; 
             overflow: hidden; 
             z-index: 1000; 
+            transition: left 0.3s ease;
         }
+        
         .api-status { 
             position: absolute; 
             bottom: 5rem; 
@@ -191,15 +188,8 @@
             border-radius: 8px; 
             font-size: 0.8rem; 
             z-index: 1000; 
+            transition: left 0.3s ease;
         }
-
-        .filter-panel.collapsed ~ .progress-bar {
-            left: 70px;
-        }
-        
-        
-        
-        
         
         .view-toggle { 
             position: absolute; 
@@ -215,9 +205,27 @@
             gap: 0.5rem; 
             transition: left 0.3s ease;
         }
+        
+        /* Position elements when filter panel is open */
+        .filter-panel:not(.collapsed) ~ .refresh-info,
+        .filter-panel:not(.collapsed) ~ .progress-bar,
+        .filter-panel:not(.collapsed) ~ .api-status,
+        .filter-panel:not(.collapsed) ~ .view-toggle {
+            left: 220px;
+        }
+        
+        /* Position elements when filter panel is closed */
+        .filter-panel.collapsed ~ .refresh-info,
+        .filter-panel.collapsed ~ .progress-bar,
+        .filter-panel.collapsed ~ .api-status {
+            left: 1rem;
+        }
+        
         .filter-panel.collapsed ~ .view-toggle {
             left: 1rem;
         }
+        
+        .filter-checkbox { margin: 0.3rem 0; }
         
         .county-outline { color: #222; weight: 1.5; fill: #fff; fillOpacity: 0; opacity: 0.7; pointer-events: none; }
         .inactive-county { fill: #fff; fill-opacity: 0.7; opacity: 0.6; pointer-events: none; }
