@@ -1083,6 +1083,8 @@
             document.getElementById("info-panel").style.display = "none";
         }
 
+        
+
         function checkUserInAlertArea() {
             if (!userLocation || typeof userLocation.lat !== "number" || typeof userLocation.lng !== "number") {
                 return;
@@ -1090,34 +1092,80 @@
             
             const banner = document.getElementById("alert-banner");
             userAlerts = [];
+            const userLatLng = L.latLng(userLocation.lat, userLocation.lng);
             
             // Check polygon alerts
             for (const id in alertLayers) {
                 const layer = alertLayers[id];
-                if (layer && (layer instanceof L.Polygon || layer instanceof L.FeatureGroup)) {
+                if (layer) {
                     try {
-                        if (layer.getBounds().contains([userLocation.lat, userLocation.lng])) {
-                            const popupContent = layer.getPopup().getContent();
-                            const parser = new DOMParser();
-                            const doc = parser.parseFromString(popupContent, "text/html");
-                            const eventType = doc.querySelector("h3").textContent;
-                            const severity = doc.querySelector("p:nth-child(3)").textContent.replace("Severity: ", "");
-                            userAlerts.push({id, eventType, severity});
+                        // For polygon layers
+                        if (layer instanceof L.Polygon) {
+                            if (isPointInPolygon(userLatLng, layer.getLatLngs())) {
+                                const properties = getAlertPropertiesFromLayer(layer);
+                                if (properties) {
+                                    userAlerts.push({
+                                        id: id,
+                                        eventType: properties.event || "Unknown Alert",
+                                        severity: properties.severity || "Unknown"
+                                    });
+                                }
+                            }
                         }
-                    } catch (error) {}
+                        // For feature groups (multi-polygon alerts)
+                        else if (layer instanceof L.FeatureGroup) {
+                            let inAlertArea = false;
+                            let alertProperties = null;
+                            
+                            layer.eachLayer(function(polygonLayer) {
+                                if (polygonLayer instanceof L.Polygon && 
+                                    isPointInPolygon(userLatLng, polygonLayer.getLatLngs())) {
+                                    inAlertArea = true;
+                                    alertProperties = getAlertPropertiesFromLayer(polygonLayer);
+                                }
+                            });
+                            
+                            if (inAlertArea && alertProperties) {
+                                userAlerts.push({
+                                    id: id,
+                                    eventType: alertProperties.event || "Unknown Alert",
+                                    severity: alertProperties.severity || "Unknown"
+                                });
+                            }
+                        }
+                    } catch (error) {
+                        console.error("Error checking polygon alert:", error);
+                    }
                 }
             }
             
-            // Check county alerts
+            // Check county alerts - this is the key fix
             if (countyActiveLayer) {
                 countyActiveLayer.eachLayer(function(layer) {
-                    if (layer.getBounds && layer.getBounds().contains([userLocation.lat, userLocation.lng])) {
-                        const popupContent = layer.getPopup().getContent();
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(popupContent, "text/html");
-                        const eventType = doc.querySelector("h3").textContent;
-                        const severity = doc.querySelector("p:nth-child(5)").textContent.replace("Severity: ", "");
-                        userAlerts.push({id: layer._leaflet_id, eventType, severity});
+                    try {
+                        // For county alerts, we need to check if the point is within the actual geometry
+                        // not just the bounds, as bounds can be larger than the actual county shape
+                        if (layer.getBounds && layer.getBounds().contains(userLatLng)) {
+                            // Get the GeoJSON feature
+                            const feature = layer.feature;
+                            if (feature && feature.properties && feature.properties._alert) {
+                                const alertProperties = feature.properties._alert.properties;
+                                
+                                // For county alerts, we need to check if the point is actually within the county geometry
+                                // This is more accurate than just checking bounds
+                                if (isPointInGeoJSONFeature(userLatLng, feature)) {
+                                    userAlerts.push({
+                                        id: layer._leaflet_id,
+                                        eventType: alertProperties.event || "Unknown Alert",
+                                        severity: alertProperties.severity || "Unknown",
+                                        isCountyAlert: true,
+                                        layer: layer
+                                    });
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.error("Error checking county alert:", error);
                     }
                 });
             }
@@ -1147,7 +1195,133 @@
                 banner.classList.remove("active");
             }
         }
-
+        
+        // Helper function to check if a point is inside a GeoJSON feature
+        function isPointInGeoJSONFeature(point, feature) {
+            if (!feature || !feature.geometry) return false;
+            
+            // Convert Leaflet LatLng to GeoJSON format [lng, lat]
+            const geoJSONPoint = {
+                type: "Point",
+                coordinates: [point.lng, point.lat]
+            };
+            
+            // For Polygon features
+            if (feature.geometry.type === "Polygon") {
+                return pointInPolygonGeoJSON(geoJSONPoint, feature.geometry);
+            }
+            // For MultiPolygon features
+            else if (feature.geometry.type === "MultiPolygon") {
+                for (const polygon of feature.geometry.coordinates) {
+                    const polyGeoJSON = {
+                        type: "Polygon",
+                        coordinates: polygon
+                    };
+                    if (pointInPolygonGeoJSON(geoJSONPoint, polyGeoJSON)) {
+                        return true;
+                    }
+                }
+            }
+            
+            return false;
+        }
+        
+        // Ray casting algorithm for point in polygon detection with GeoJSON format
+        function pointInPolygonGeoJSON(point, polygon) {
+            const x = point.coordinates[0];
+            const y = point.coordinates[1];
+            let inside = false;
+            
+            // Check each polygon ring (first is outer ring, others are holes)
+            for (let i = 0; i < polygon.coordinates.length; i++) {
+                const ring = polygon.coordinates[i];
+                for (let j = 0, k = ring.length - 1; j < ring.length; k = j++) {
+                    const xi = ring[j][0], yi = ring[j][1];
+                    const xj = ring[k][0], yj = ring[k][1];
+                    
+                    const intersect = ((yi > y) !== (yj > y)) &&
+                        (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+                    
+                    if (intersect) inside = !inside;
+                }
+                
+                // If we're in a hole, we're not inside the polygon
+                if (i > 0 && inside) {
+                    return false;
+                }
+            }
+            
+            return inside;
+        }
+        
+        // Helper function to check if a point is inside a Leaflet polygon
+        function isPointInPolygon(point, polygon) {
+            if (!polygon || polygon.length === 0) return false;
+            
+            // For simple polygons
+            if (polygon[0] instanceof L.LatLng) {
+                const polyPoints = polygon.map(latLng => [latLng.lat, latLng.lng]);
+                return pointInPolygon([point.lat, point.lng], polyPoints);
+            }
+            // For multi-polygons or complex shapes
+            else if (Array.isArray(polygon[0])) {
+                for (const poly of polygon) {
+                    if (poly[0] instanceof L.LatLng) {
+                        const polyPoints = poly.map(latLng => [latLng.lat, latLng.lng]);
+                        if (pointInPolygon([point.lat, point.lng], polyPoints)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            
+            return false;
+        }
+        
+        // Ray casting algorithm for point in polygon detection
+        function pointInPolygon(point, vs) {
+            const x = point[0], y = point[1];
+            let inside = false;
+            
+            for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+                const xi = vs[i][0], yi = vs[i][1];
+                const xj = vs[j][0], yj = vs[j][1];
+                
+                const intersect = ((yi > y) !== (yj > y)) &&
+                    (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+                
+                if (intersect) inside = !inside;
+            }
+            
+            return inside;
+        }
+        
+        // Helper function to extract alert properties from a layer
+        function getAlertPropertiesFromLayer(layer) {
+            try {
+                const popupContent = layer.getPopup().getContent();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(popupContent, "text/html");
+                
+                const eventType = doc.querySelector("h3") ? doc.querySelector("h3").textContent : "Unknown Alert";
+                let severity = "Unknown";
+                
+                // Try different ways to find severity in the popup content
+                const severityElements = doc.querySelectorAll("p");
+                for (const element of severityElements) {
+                    if (element.textContent.includes("Severity:")) {
+                        severity = element.textContent.replace("Severity:", "").trim();
+                        break;
+                    }
+                }
+                
+                return { event: eventType, severity: severity };
+            } catch (error) {
+                console.error("Error extracting properties from layer:", error);
+                return null;
+            }
+        }
+        
         function updateBannerAlert() {
             const banner = document.getElementById("alert-banner");
             if (userAlerts.length === 0) return;
@@ -1155,7 +1329,7 @@
             const alert = userAlerts[currentBannerAlertIndex];
             banner.innerHTML = `
                 <strong>${alert.eventType}</strong> is in effect for your location. 
-                <a href="#" onclick="focusOnAlert('${alert.id}')">View details</a>
+                <a href="#" onclick="focusOnAlert('${alert.id}', ${alert.isCountyAlert || false})">View details</a>
             `;
             
             if (userAlerts.length > 1) {
@@ -1166,7 +1340,7 @@
                 `;
             }
         }
-
+        
         window.cycleBannerAlert = function(direction) {
             currentBannerAlertIndex += direction;
             if (currentBannerAlertIndex < 0) {
@@ -1176,8 +1350,8 @@
             }
             updateBannerAlert();
         }
-
-        window.focusOnAlert = function(alertId) {
+        
+        window.focusOnAlert = function(alertId, isCountyAlert = false) {
             // Try to find the alert in polygon layers
             const layer = alertLayers[alertId];
             if (layer) {
@@ -1196,8 +1370,22 @@
                     }
                 });
             }
+            
+            // If we still haven't found it, check if it's a county alert by feature properties
+            if (countyActiveLayer) {
+                countyActiveLayer.eachLayer(function(layer) {
+                    const feature = layer.feature;
+                    if (feature && feature.properties && feature.properties._alert && 
+                        feature.properties._alert.properties.id === alertId) {
+                        map.fitBounds(layer.getBounds());
+                        layer.openPopup();
+                        return;
+                    }
+                });
+            }
         }
-
+        
+        // ... (the rest of your existing code remains the same)
         const style = document.createElement("style");
         style.textContent = `
             .pulsing-layer {
