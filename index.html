@@ -909,29 +909,34 @@
                         movement = movementMatch[0];
                     }
                     
-                    // Extract IMPACT if available (look for "IMPACTS" section with or without asterisk)
-                    const impactMatch = desc.match(/(?:\* )?IMPACTS?[:\*\.\s]*([^*]+)(?=\* ADDITIONAL|\* WHEN|\* WHERE|\* WHAT|\* Instructions|\* For more|\* To report|\* A|\* Stay|\* The|\* For your|\z)/i) ||
-                                       desc.match(/EFFECT[:\*\.\s]*([^*]+)(?=\* ADDITIONAL|\* WHEN|\* WHERE|\* WHAT|\* Instructions|\* For more|\* To report|\* A|\* Stay|\* The|\* For your|\z)/i);
+                    // Extract IMPACT if available - FIXED REGEX
+                    const impactMatch = desc.match(/(?:\* )?IMPACTS?[:\*\.\s]*([\s\S]*?)(?=\* ADDITIONAL|\* WHEN|\* WHERE|\* WHAT|\* Instructions|\* For more|\* To report|\* A|\* Stay|\* The|\* For your|\* \w+|\n\*|\z)/i) ||
+                                       desc.match(/(?:\* )?EFFECT[:\*\.\s]*([\s\S]*?)(?=\* ADDITIONAL|\* WHEN|\* WHERE|\* WHAT|\* Instructions|\* For more|\* To report|\* A|\* Stay|\* The|\* For your|\* \w+|\n\*|\z)/i);
                     if (impactMatch) {
                         impact = impactMatch[1].trim();
+                        // Clean up any trailing asterisks or section markers
+                        impact = impact.replace(/\*[A-Z]+\s*:\s*$/, '').trim();
                     }
                     
-                    // Extract WHAT if available (with or without asterisk)
-                    const whatMatch = desc.match(/(?:\* )?WHAT[:\*\.\s]*([^*]+)(?=\* WHERE|\* WHEN|\* IMPACTS|\* ADDITIONAL|\* Instructions|\* For more|\* To report|\* A|\* Stay|\* The|\* For your|\z)/i);
+                    // Extract WHAT if available - FIXED REGEX
+                    const whatMatch = desc.match(/(?:\* )?WHAT[:\*\.\s]*([\s\S]*?)(?=\* WHERE|\* WHEN|\* IMPACTS|\* ADDITIONAL|\* Instructions|\* For more|\* To report|\* A|\* Stay|\* The|\* For your|\* \w+|\n\*|\z)/i);
                     if (whatMatch) {
                         what = whatMatch[1].trim();
+                        what = what.replace(/\*[A-Z]+\s*:\s*$/, '').trim();
                     }
                     
-                    // Extract WHEN if available (with or without asterisk)
-                    const whenMatch = desc.match(/(?:\* )?WHEN[:\*\.\s]*([^*]+)(?=\* WHAT|\* WHERE|\* IMPACTS|\* ADDITIONAL|\* Instructions|\* For more|\* To report|\* A|\* Stay|\* The|\* For your|\z)/i);
+                    // Extract WHEN if available - FIXED REGEX
+                    const whenMatch = desc.match(/(?:\* )?WHEN[:\*\.\s]*([\s\S]*?)(?=\* WHAT|\* WHERE|\* IMPACTS|\* ADDITIONAL|\* Instructions|\* For more|\* To report|\* A|\* Stay|\* The|\* For your|\* \w+|\n\*|\z)/i);
                     if (whenMatch) {
                         when = whenMatch[1].trim();
+                        when = when.replace(/\*[A-Z]+\s*:\s*$/, '').trim();
                     }
                     
-                    // Extract ADDITIONAL DETAILS if available (with or without asterisk)
-                    const additionalMatch = desc.match(/(?:\* )?ADDITIONAL DETAILS[:\*\.\s]*([^*]+)(?=\* WHAT|\* WHERE|\* WHEN|\* IMPACTS|\* Instructions|\* For more|\* To report|\* A|\* Stay|\* The|\* For your|\z)/i);
+                    // Extract ADDITIONAL DETAILS if available - FIXED REGEX
+                    const additionalMatch = desc.match(/(?:\* )?ADDITIONAL DETAILS[:\*\.\s]*([\s\S]*?)(?=\* WHAT|\* WHERE|\* WHEN|\* IMPACTS|\* Instructions|\* For more|\* To report|\* A|\* Stay|\* The|\* For your|\* \w+|\n\*|\z)/i);
                     if (additionalMatch) {
                         additionalDetails = additionalMatch[1].trim();
+                        additionalDetails = additionalDetails.replace(/\*[A-Z]+\s*:\s*$/, '').trim();
                     }
                 }
                 
@@ -987,7 +992,6 @@
                 window.location.href = "/alert-details.html";
             }
         }
-
         function renderActiveCountyView() {
             if (!countyFeatureCollection) return;
             countyOutlinesLayer = L.geoJSON(countyFeatureCollection, {
