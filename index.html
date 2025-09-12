@@ -1394,29 +1394,25 @@
                 }
             }
             
-            // Check county alerts - this is the key fix
+            // Check county alerts - FIXED VERSION
             if (countyActiveLayer) {
                 countyActiveLayer.eachLayer(function(layer) {
                     try {
-                        // For county alerts, we need to check if the point is within the actual geometry
-                        // not just the bounds, as bounds can be larger than the actual county shape
-                        if (layer.getBounds && layer.getBounds().contains(userLatLng)) {
-                            // Get the GeoJSON feature
-                            const feature = layer.feature;
-                            if (feature && feature.properties && feature.properties._alert) {
-                                const alertProperties = feature.properties._alert.properties;
-                                
-                                // For county alerts, we need to check if the point is actually within the county geometry
-                                // This is more accurate than just checking bounds
-                                if (isPointInGeoJSONFeature(userLatLng, feature)) {
-                                    userAlerts.push({
-                                        id: layer._leaflet_id,
-                                        eventType: alertProperties.event || "Unknown Alert",
-                                        severity: alertProperties.severity || "Unknown",
-                                        isCountyAlert: true,
-                                        layer: layer
-                                    });
-                                }
+                        // Get the GeoJSON feature
+                        const feature = layer.feature;
+                        if (feature && feature.properties && feature.properties._alert) {
+                            const alertProperties = feature.properties._alert.properties;
+                            
+                            // Check if point is within the actual county geometry (not just bounds)
+                            if (isPointInCountyFeature(userLatLng, feature)) {
+                                userAlerts.push({
+                                    id: feature.properties._alert.id || layer._leaflet_id,
+                                    eventType: alertProperties.event || "Unknown Alert",
+                                    severity: alertProperties.severity || "Unknown",
+                                    isCountyAlert: true,
+                                    layer: layer,
+                                    feature: feature
+                                });
                             }
                         }
                     } catch (error) {
@@ -1450,7 +1446,6 @@
                 banner.classList.remove("active");
             }
         }
-        
         // Helper function to check if a point is inside a GeoJSON feature
         function isPointInGeoJSONFeature(point, feature) {
             if (!feature || !feature.geometry) return false;
@@ -1480,9 +1475,39 @@
             
             return false;
         }
+        // NEW FUNCTION: Check if a point is inside a county feature
+        function isPointInCountyFeature(point, feature) {
+            if (!feature || !feature.geometry) return false;
+            
+            // Convert Leaflet LatLng to GeoJSON format [lng, lat]
+            const geoJSONPoint = {
+                type: "Point",
+                coordinates: [point.lng, point.lat]
+            };
+            
+            // For Polygon features
+            if (feature.geometry.type === "Polygon") {
+                return isPointInPolygonGeoJSON(geoJSONPoint, feature.geometry);
+            }
+            // For MultiPolygon features
+            else if (feature.geometry.type === "MultiPolygon") {
+                for (const polygon of feature.geometry.coordinates) {
+                    const polyGeoJSON = {
+                        type: "Polygon",
+                        coordinates: polygon
+                    };
+                    if (isPointInPolygonGeoJSON(geoJSONPoint, polyGeoJSON)) {
+                        return true;
+                    }
+                }
+            }
+            
+            return false;
+        }
+
         
-        // Ray casting algorithm for point in polygon detection with GeoJSON format
-        function pointInPolygonGeoJSON(point, polygon) {
+        // UPDATED - Ray casting algorithm for point in polygon detection with GeoJSON format
+        function isPointInPolygonGeoJSON(point, polygon) {
             const x = point.coordinates[0];
             const y = point.coordinates[1];
             let inside = false;
@@ -1508,7 +1533,6 @@
             
             return inside;
         }
-        
         // Helper function to check if a point is inside a Leaflet polygon
         function isPointInPolygon(point, polygon) {
             if (!polygon || polygon.length === 0) return false;
@@ -1610,7 +1634,7 @@
             // Try to find the alert in polygon layers
             const layer = alertLayers[alertId];
             if (layer) {
-                if (layer.getBounds) map.fitBounds(layer.getBounds());
+                if (layer.getBounds) map.fitBounds(layer.getBounds().pad(0.1));
                 layer.openPopup();
                 return;
             }
@@ -1618,25 +1642,29 @@
             // Try to find the alert in county layers
             if (countyActiveLayer) {
                 countyActiveLayer.eachLayer(function(layer) {
+                    // Check by layer ID
                     if (layer._leaflet_id == alertId) {
-                        map.fitBounds(layer.getBounds());
+                        map.fitBounds(layer.getBounds().pad(0.1));
+                        layer.openPopup();
+                        return;
+                    }
+                    
+                    // Check by feature alert ID
+                    const feature = layer.feature;
+                    if (feature && feature.properties && feature.properties._alert && 
+                        feature.properties._alert.id === alertId) {
+                        map.fitBounds(layer.getBounds().pad(0.1));
                         layer.openPopup();
                         return;
                     }
                 });
             }
             
-            // If we still haven't found it, check if it's a county alert by feature properties
-            if (countyActiveLayer) {
-                countyActiveLayer.eachLayer(function(layer) {
-                    const feature = layer.feature;
-                    if (feature && feature.properties && feature.properties._alert && 
-                        feature.properties._alert.properties.id === alertId) {
-                        map.fitBounds(layer.getBounds());
-                        layer.openPopup();
-                        return;
-                    }
-                });
+            // If we still haven't found it, check in userAlerts array
+            const userAlert = userAlerts.find(alert => alert.id === alertId);
+            if (userAlert && userAlert.layer) {
+                map.fitBounds(userAlert.layer.getBounds().pad(0.1));
+                userAlert.layer.openPopup();
             }
         }
         
