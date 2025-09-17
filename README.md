@@ -1,4 +1,4 @@
-SOFTWARE AND CONTENT ATTRIBUTIONS
+# SOFTWARE AND CONTENT ATTRIBUTIONS
 This application uses the jQuery UI CSS Framework, version 1.8.21.
 
 Copyright 2012, AUTHORS.txt (http://jqueryui.com/about)
